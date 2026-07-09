@@ -10,16 +10,16 @@ plugin's own agent/command namespace.
 ## What's included
 
 - `SessionStart` hook — activates caveman mode and injects the ruleset
-- `UserPromptSubmit` hook — tracks `/caveman [lite|full|ultra|off]` and
-  natural-language toggles ("talk like caveman", "stop caveman"), reinforces
-  the active mode every turn
+- `UserPromptSubmit` hook — tracks natural-language toggles ("talk like
+  caveman", "stop caveman"), reinforces the active mode every turn
+- One slash command, `/caveman-lite [lite|full|ultra|wenyan|wenyan-lite|wenyan-ultra|off]`,
+  to switch levels deterministically
 
 ## What's deliberately left out
 
 - No agents (no `cavecrew-*`)
-- No slash commands (no `/caveman-commit`, `/caveman-review`, etc.)
+- No `/caveman-commit`, `/caveman-review`, `/caveman-compress`, `/caveman-stats`
 - No skills
-- No `/caveman-stats` tracking
 
 If you don't want to install even hooks, see [`caveman-lite.md`](./caveman-lite.md)
 for a copy-pasteable prompt block with the same behavior and zero runtime

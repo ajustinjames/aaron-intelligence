@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 // caveman-lite — UserPromptSubmit hook to track which caveman mode is active
-// Inspects user input for "/caveman" text and natural-language toggles,
-// writes mode to flag file, and reinforces active mode every turn.
+// Inspects user input for natural-language toggles, writes mode to flag
+// file, and reinforces active mode every turn.
+//
+// Explicit level switches go through the /caveman-lite command (see
+// commands/caveman-lite.md + hooks/caveman-set-mode.js), which writes the
+// flag deterministically. This hook does NOT regex-match raw "/caveman ..."
+// text — an unrecognized "/" prefix may never reach the model as a prompt
+// at all, depending on the host CLI, so that path isn't reliable.
 //
 // No commit/review/compress/stats handling here — those depend on the
-// agents/commands/skills that caveman-lite deliberately doesn't install.
+// agents/skills that caveman-lite deliberately doesn't install.
 
 const fs = require('fs');
 const path = require('path');
@@ -30,32 +36,6 @@ process.stdin.on('end', () => {
         if (mode !== 'off') {
           safeWriteFlag(flagPath, mode);
         }
-      }
-    }
-
-    // "/caveman [lite|full|ultra|off|wenyan...]" — caveman-lite registers no
-    // real slash command, so this only matches literal typed text.
-    if (prompt.startsWith('/caveman')) {
-      const parts = prompt.split(/\s+/);
-      const arg = parts[1] || '';
-
-      const { VALID_MODES } = require('./caveman-config');
-      let mode = null;
-
-      if (!arg) {
-        mode = getDefaultMode();
-      } else if (arg === 'off' || arg === 'stop' || arg === 'disable') {
-        mode = 'off';
-      } else if (arg === 'wenyan-full') {
-        mode = 'wenyan';
-      } else if (VALID_MODES.includes(arg)) {
-        mode = arg;
-      }
-
-      if (mode && mode !== 'off') {
-        safeWriteFlag(flagPath, mode);
-      } else if (mode === 'off') {
-        try { fs.unlinkSync(flagPath); } catch (e) {}
       }
     }
 

@@ -55,7 +55,7 @@ let output =
   rules + '\n\n' +
   '## Persistence\n\n' +
   'ACTIVE EVERY RESPONSE. No revert after many turns. Still active if unsure. Off only: "stop caveman" / "normal mode".\n\n' +
-  'Current level: **' + modeLabel + '**. Switch: `/caveman lite|full|ultra` (typed as plain text — caveman-lite registers no slash command).\n\n' +
+  'Current level: **' + modeLabel + '**. Switch: `/caveman-lite lite|full|ultra|wenyan|off`.\n\n' +
   '## Auto-Clarity\n\n' +
   'Drop caveman for: security warnings, irreversible action confirmations, multi-step sequences where fragment order risks misread, user asks to clarify or repeats question. Resume caveman after clear part done.\n\n' +
   '## Boundaries\n\n' +

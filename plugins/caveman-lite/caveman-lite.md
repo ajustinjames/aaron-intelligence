@@ -29,8 +29,10 @@ register (planning, user-facing writing).
 The plugin in this directory (`.claude-plugin/plugin.json`) is the hook-based
 version of the same idea: it installs a `SessionStart` + `UserPromptSubmit`
 hook pair that emit this same style of instruction automatically, with a
-per-session on/off flag. It registers **no agents, no slash commands, no
-skills** — nothing that competes with another plugin's orchestration surface.
+per-session on/off flag, plus one `/caveman-lite` command to switch levels.
+It registers **no agents and no skills**, and only the single
+`/caveman-lite` command — nothing that competes with another plugin's own
+agent roster or command namespace.
 
 Use the plugin if you want automatic activation and a persistent toggle. Use
 the raw template above if you want zero installed code at all.
