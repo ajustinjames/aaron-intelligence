@@ -11,6 +11,11 @@
       "name": "caveman-lite",
       "source": "./plugins/caveman-lite",
       "description": "Ultra-compressed communication mode (hooks only) — no agents, no slash commands, no skills. Safe to install alongside multi-agent orchestration layers."
+    },
+    {
+      "name": "pilotfish-agents",
+      "source": "./plugins/pilotfish-agents",
+      "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) for portable multi-model orchestration. See plugin README for required manual settings.json/CLAUDE.md steps."
     }
   ]
 }
