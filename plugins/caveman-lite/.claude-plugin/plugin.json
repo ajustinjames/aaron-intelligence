@@ -1,0 +1,34 @@
+{
+  "name": "caveman-lite",
+  "description": "Ultra-compressed communication mode (hooks only) — no agents, no slash commands, no skills. Safe to install alongside multi-agent orchestration layers.",
+  "author": {
+    "name": "Aaron James",
+    "url": "https://github.com/ajustinjames"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/caveman-activate.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading caveman-lite mode..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/caveman-mode-tracker.js\"",
+            "timeout": 5,
+            "statusMessage": "Tracking caveman-lite mode..."
+          }
+        ]
+      }
+    ]
+  }
+}

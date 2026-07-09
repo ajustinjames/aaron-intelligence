@@ -2,7 +2,7 @@
 
 My random enhancement for AI tools.
 
-This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It doesn't host any plugins of its own yet — instead it's a curated jumping-off point for finding good Claude Code plugins, official and third-party.
+This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It hosts one small plugin of its own ([`caveman-lite`](./plugins/caveman-lite)) and is otherwise a curated jumping-off point for finding good Claude Code plugins, official and third-party.
 
 ## Using this marketplace
 
@@ -17,6 +17,12 @@ Then install any plugin it lists:
 ```
 /plugin install <plugin-name>@aaron-intelligence
 ```
+
+## Plugins hosted here
+
+| Plugin | Description | Install |
+|---|---|---|
+| `caveman-lite` | Ultra-compressed communication mode, hooks only — no agents or slash commands, so it won't collide with another plugin's orchestration surface. Also ships a zero-runtime pure-prompt template for setups where even hooks are too much. | `/plugin install caveman-lite@aaron-intelligence` |
 
 ## Curated plugins
 
