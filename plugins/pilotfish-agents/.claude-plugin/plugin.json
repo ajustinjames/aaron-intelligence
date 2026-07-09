@@ -1,9 +1,35 @@
 {
   "name": "pilotfish-agents",
-  "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) for portable install. Named distinctly from upstream's \"pilotfish\" to avoid marketplace name collisions. The settings.json fallbackModel key and CLAUDE.md orchestration policy are not plugin-deliverable — see README.md for the manual steps.",
-  "version": "1.1.1",
+  "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) plus hooks that reinforce the delegation policy each turn so it doesn't decay under a strong task prompt. Named distinctly from upstream's \"pilotfish\" to avoid marketplace name collisions. The settings.json fallbackModel key stays a manual step — see README.md.",
+  "version": "1.2.0",
   "author": {
     "name": "Aaron James",
     "url": "https://github.com/ajustinjames"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-activate.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading pilotfish orchestrator policy..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-reminder.js\"",
+            "timeout": 5,
+            "statusMessage": "Reinforcing pilotfish orchestrator policy..."
+          }
+        ]
+      }
+    ]
   }
 }

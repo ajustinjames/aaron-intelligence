@@ -11,16 +11,19 @@ Named `pilotfish-agents` rather than `pilotfish` deliberately: this is a vendore
 - `agents/executor.md` — judgment-requiring implementation (`opus`).
 - `agents/verifier.md` — adversarial fresh-context verification, `Write`/`Edit`/`NotebookEdit` disallowed (`opus`).
 - `agents/security-executor.md` — security-sensitive implementation/analysis, routed to `opus` deliberately (frontier models' safety classifiers can refuse benign defensive-security work on cheaper tiers) (`opus`, high effort).
-- `ORCHESTRATION.md` — the main-session delegation policy (when to hand work to which role). This is the content that goes between `<!-- pilotfish:begin -->` / `<!-- pilotfish:end -->` markers in a global `CLAUDE.md`.
+- `ORCHESTRATION.md` — the main-session delegation policy (when to hand work to which role). Delivered to the session by the `SessionStart` hook below; also the content that goes between `<!-- pilotfish:begin -->` / `<!-- pilotfish:end -->` markers if you additionally paste it into a global `CLAUDE.md`.
+- `hooks/orchestrator-activate.js` — `SessionStart` hook. Injects `ORCHESTRATION.md` (markers stripped) as session context, so the delegation policy ships with the plugin instead of requiring a manual `CLAUDE.md` paste.
+- `hooks/orchestrator-reminder.js` — `UserPromptSubmit` hook. Re-injects a short one-paragraph reminder every turn. This is the piece upstream lacks: the policy is otherwise passive context that decays across a long session under a strongly-imperative task prompt, so the main session drifts back into running work inline or over-tiering (reaching for `executor`/opus on mechanical `mech-executor`/sonnet work). Set `PILOTFISH_ORCHESTRATOR=off` in your environment to disable both hooks.
 
 ## What this can't ship (plugin limitation, not an oversight)
 
-Claude Code plugins can install `agents/`, but they **cannot** write to `~/.claude/settings.json` or `~/.claude/CLAUDE.md`. Two upstream pieces stay manual:
+Claude Code plugins can install `agents/` **and hooks**, but they **cannot** write to `~/.claude/settings.json`. One upstream piece stays manual:
 
 | Piece | Where it'd go | Why it matters |
 |---|---|---|
 | `fallbackModel: ["opus", "sonnet"]` in `settings.json` | Global settings | Resilience — falls back on overload/unavailability. Independent of your `model` default; does not change it. |
-| `ORCHESTRATION.md` contents | Global `CLAUDE.md`, between the pilotfish markers | The delegation policy — without it the six agents exist but nothing tells the main session when to use them. |
+
+The delegation policy that upstream can only deliver via a manual `CLAUDE.md` paste is shipped here by the `SessionStart` hook, so that paste is now **optional** — see Install mode 1.
 
 **We deliberately do not set `model: "best"`** the way the upstream runbook suggests — that's a separate, optional choice about your main-session default model, orthogonal to installing the agents. Set it yourself only if you want it.
 
@@ -34,8 +37,9 @@ Claude Code plugins can install `agents/`, but they **cannot** write to `~/.clau
 Then, manually, once per machine:
 
 1. Add `"fallbackModel": ["opus", "sonnet"]` to `~/.claude/settings.json` (or skip if you don't want the fallback behavior).
-2. Paste the contents of this plugin's `ORCHESTRATION.md` into `~/.claude/CLAUDE.md`, between `<!-- pilotfish:begin -->` and `<!-- pilotfish:end -->` markers (create the file if it doesn't exist).
-3. Restart your Claude Code session.
+2. Restart your Claude Code session.
+
+The delegation policy now loads automatically via the plugin's `SessionStart`/`UserPromptSubmit` hooks — no `CLAUDE.md` paste required. If you *already* pasted `ORCHESTRATION.md` between the pilotfish markers in `~/.claude/CLAUDE.md` (e.g. from a global install), you can remove that block to avoid duplicating the policy at session start; the hook covers it. To disable the hooks entirely, set `PILOTFISH_ORCHESTRATOR=off`.
 
 ## Install mode 2 — upstream runbook (global, non-portable)
 

@@ -19,9 +19,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `caveman-lite.md` — zero-runtime, copy-pasteable prompt-only version of the same behavior, for contexts where even hooks are unwanted.
   - `README.md` — plugin-level docs (what's included/excluded, config resolution order, valid modes).
 - `plugins/pilotfish-agents/` — the other hosted plugin, a vendored (point-in-time copy, not a live mirror) subset of [`Nanako0129/pilotfish`](https://github.com/Nanako0129/pilotfish); named `pilotfish-agents` (not `pilotfish`) to avoid colliding with upstream's own name in the marketplace/install namespace:
-  - `.claude-plugin/plugin.json` — plugin manifest; no hooks/commands, just an `agents/` dir.
+  - `.claude-plugin/plugin.json` — plugin manifest; wires `SessionStart` and `UserPromptSubmit` hooks (see `hooks/`) plus the `agents/` dir. No commands.
   - `agents/` — six role subagent definitions (`scout.md`, `Explore.md`, `mech-executor.md`, `executor.md`, `verifier.md`, `security-executor.md`) copied verbatim from upstream's `templates/agents/`.
-  - `ORCHESTRATION.md` — copy of upstream's `templates/claude-md.orchestration.md`; the main-session delegation policy. Plugins can't inject content into a user's global `CLAUDE.md`, so this ships as a file to paste manually — see the plugin README.
+  - `ORCHESTRATION.md` — copy of upstream's `templates/claude-md.orchestration.md`; the main-session delegation policy. Plugins can't inject content into a user's global `CLAUDE.md`, so upstream ships this to paste manually — but the `SessionStart` hook here reads this same file and injects it as session context, making that paste optional.
+  - `hooks/orchestrator-activate.js` — `SessionStart` hook; reads `ORCHESTRATION.md`, strips the `<!-- pilotfish:* -->` markers, emits the policy as hidden session context. Local addition, not from upstream (upstream has no hooks).
+  - `hooks/orchestrator-reminder.js` — `UserPromptSubmit` hook; re-injects a one-paragraph delegation reminder every turn so the policy doesn't decay under a strong task prompt (the fix for issue #6, "pilotfish failed to trigger"). Both hooks honor `PILOTFISH_ORCHESTRATOR=off`.
   - `VERSION` — upstream version this vendor tracks; bump alongside `UPGRADING.md`'s sync steps.
   - `UPGRADING.md` — how to pull upstream changes into the vendored copy and re-sync any active global (non-plugin) install.
   - `README.md` — what's shipped vs. what requires manual `settings.json`/`CLAUDE.md` steps, both install modes, uninstall.
