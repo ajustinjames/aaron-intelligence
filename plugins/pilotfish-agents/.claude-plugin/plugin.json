@@ -1,0 +1,9 @@
+{
+  "name": "pilotfish-agents",
+  "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) for portable install. Named distinctly from upstream's \"pilotfish\" to avoid marketplace name collisions. The settings.json fallbackModel key and CLAUDE.md orchestration policy are not plugin-deliverable — see README.md for the manual steps.",
+  "version": "1.1.1",
+  "author": {
+    "name": "Aaron James",
+    "url": "https://github.com/ajustinjames"
+  }
+}
