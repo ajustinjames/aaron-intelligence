@@ -31,8 +31,8 @@ Apply upstream changes to the vendored files. If you've locally customized an ag
 
 ## 3. Bump versions
 
-- `plugins/pilotfish-agents/VERSION` → new upstream version string.
-- `plugins/pilotfish-agents/.claude-plugin/plugin.json` → bump `version` to match.
+- `plugins/pilotfish-agents/VERSION` → new upstream version string. This file always tracks the vendored upstream version, nothing else.
+- `plugins/pilotfish-agents/.claude-plugin/plugin.json` → bump `version`. This is the plugin's **own** release version and may be ahead of `VERSION`: local features that aren't from upstream (e.g. the `SessionStart`/`UserPromptSubmit` orchestrator hooks, added in plugin `1.2.0` while tracking upstream `1.1.1`) bump this independently. When syncing a new upstream, carry those local additions forward and bump the minor/patch as appropriate rather than snapping back to the upstream string.
 - Update the commit SHA and version noted in `README.md`'s attribution line.
 
 ## 4. Re-sync the active global install (if you run one)
