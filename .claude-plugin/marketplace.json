@@ -1,0 +1,10 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "aaron-intelligence",
+  "description": "Aaron James's Claude Code plugin marketplace and curated plugin list.",
+  "owner": {
+    "name": "Aaron James",
+    "url": "https://github.com/ajustinjames"
+  },
+  "plugins": []
+}
