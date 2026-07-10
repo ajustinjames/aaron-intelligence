@@ -29,6 +29,11 @@ curl -fsSL "https://raw.githubusercontent.com/Nanako0129/pilotfish/main/template
 
 Apply upstream changes to the vendored files. If you've locally customized an agent (tuned a prompt, changed a `model`/`effort` field), reconcile by hand rather than blind-overwrite — same rule the upstream runbook itself follows for user customizations.
 
+**Local deltas to carry forward on every upstream sync** (not present upstream; do not let a sync drop them):
+
+- `disallowedTools: Task, Agent` in the frontmatter of `mech-executor.md`, `executor.md`, `security-executor.md`, and appended to `verifier.md`'s existing `disallowedTools` line — structural enforcement of upstream `1.1.1`'s prompt-only "never spawn further subagents" rule, which was observed failing in practice.
+- The "You always work alone" paragraph in those four agent bodies.
+
 ## 3. Bump versions
 
 - `plugins/pilotfish-agents/VERSION` → new upstream version string. This file always tracks the vendored upstream version, nothing else.
