@@ -29,14 +29,14 @@ process.stdin.on('end', () => {
       hookSpecificOutput: {
         hookEventName: "UserPromptSubmit",
         additionalContext:
-          "ORCHESTRATOR MODE (pilotfish): you are the main session. Delegate " +
-          "execution — don't run scout/executor work inline. Route to the " +
-          "CHEAPEST role that can plausibly succeed: scout/Explore (haiku) for " +
-          "recon, mech-executor (sonnet) for mechanical/fully-specified work, " +
-          "executor (opus) only for real design judgment, verifier before " +
-          "reporting non-trivial work done, security-executor for anything " +
-          "security. Keep planning, architecture, ambiguity resolution, and " +
-          "final review for yourself."
+          "ORCHESTRATOR MODE (pilotfish). Bright-line rules — thresholds, not vibes:\n" +
+          "- Locating or reading >3 files to answer a question → scout/Explore (haiku). Never inline.\n" +
+          "- ≥5 similar edits, or any fully-specified change → mech-executor (sonnet).\n" +
+          "- Implementation needing design judgment → executor (opus).\n" +
+          "- The word 'security' applies → security-executor. No exceptions.\n" +
+          "- Diff touches >50 lines or changes behavior → verifier BEFORE reporting done.\n" +
+          "Keep for yourself: planning, architecture, ambiguity resolution, final review, " +
+          "single-file reads you need immediately."
       }
     }));
   } catch (e) {
