@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax-check all hook scripts
+        run: |
+          for f in plugins/*/hooks/*.js; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: Validate JSON manifests
+        run: |
+          for j in .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json; do
+            echo "parse $j"
+            node -e "JSON.parse(require('fs').readFileSync('$j','utf8'))"
+          done
+
+      - name: Assert marketplace source paths exist
+        run: |
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync(".claude-plugin/marketplace.json", "utf8"));
+            const plugins = m.plugins || [];
+            let bad = 0;
+            for (const p of plugins) {
+              const src = typeof p.source === "string" ? p.source : (p.source && p.source.path);
+              if (!src) { console.error("plugin missing source:", p.name); bad++; continue; }
+              const rel = src.replace(/^\.?\//, "");
+              if (!fs.existsSync(rel)) { console.error("source path missing:", rel); bad++; }
+            }
+            if (bad) process.exit(1);
+            console.log("all", plugins.length, "plugin source paths exist");
+          '
+
+      - name: Assert caveman mode lists agree
+        run: |
+          node -e '
+            const fs = require("fs");
+            const { VALID_MODES } = require("./plugins/caveman-lite/hooks/caveman-config.js");
+            const cmd = fs.readFileSync("plugins/caveman-lite/commands/caveman-lite.md", "utf8");
+            const m = cmd.match(/argument-hint:\s*.\[([^\]]*)\]/);
+            if (!m) { console.error("could not find argument-hint in caveman-lite command"); process.exit(1); }
+            const hint = m[1].split("|").map(s => s.trim());
+            // Every token in the command hint must be a real mode.
+            const unknown = hint.filter(h => !VALID_MODES.includes(h));
+            if (unknown.length) {
+              console.error("argument-hint has non-VALID_MODES tokens:", unknown);
+              process.exit(1);
+            }
+            // wenyan-full is an alias surfaced as wenyan in the hint; every other
+            // canonical mode must be offered.
+            const expected = VALID_MODES.filter(x => x !== "wenyan-full");
+            const missing = expected.filter(x => !hint.includes(x));
+            if (missing.length) {
+              console.error("argument-hint missing modes:", missing);
+              process.exit(1);
+            }
+            console.log("mode lists agree:", hint.join(", "));
+          '
+
+      - name: Run flag-helper tests
+        run: node --test plugins/caveman-lite/hooks/caveman-config.test.js

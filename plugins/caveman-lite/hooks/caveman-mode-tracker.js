@@ -20,8 +20,16 @@ const { getDefaultMode, safeWriteFlag, readFlag } = require('./caveman-config');
 const claudeDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 const flagPath = path.join(claudeDir, '.caveman-lite-active');
 
+// Cap accumulated stdin at 1 MB. This hook only inspects the prompt for short
+// natural-language toggles; content past the cap is irrelevant, so stop
+// appending rather than growing the buffer unbounded.
+const MAX_INPUT_BYTES = 1048576;
 let input = '';
-process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('data', chunk => {
+  if (input.length < MAX_INPUT_BYTES) {
+    input += chunk;
+  }
+});
 process.stdin.on('end', () => {
   try {
     const data = JSON.parse(input);

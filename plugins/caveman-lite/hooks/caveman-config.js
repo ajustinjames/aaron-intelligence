@@ -21,6 +21,10 @@ const VALID_MODES = [
   'wenyan-lite', 'wenyan', 'wenyan-full', 'wenyan-ultra'
 ];
 
+// Upper bound on the config.json we're willing to read. A real caveman config
+// is a few bytes; anything larger is skipped in favor of the default.
+const MAX_CONFIG_BYTES = 65536;
+
 function getConfigDir() {
   if (process.env.XDG_CONFIG_HOME) {
     return path.join(process.env.XDG_CONFIG_HOME, 'caveman');
@@ -46,6 +50,11 @@ function getDefaultMode() {
 
   try {
     const configPath = getConfigPath();
+    // Size cap: a config.json larger than this isn't a real caveman config —
+    // skip it and fall through to the default rather than reading it in.
+    if (fs.statSync(configPath).size > MAX_CONFIG_BYTES) {
+      return 'full';
+    }
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     if (config.defaultMode && VALID_MODES.includes(config.defaultMode.toLowerCase())) {
       return config.defaultMode.toLowerCase();
@@ -98,7 +107,7 @@ function safeWriteFlag(flagPath, content) {
       if (e.code !== 'ENOENT') return;
     }
 
-    const tempPath = path.join(realFlagDir, `.caveman-lite-active.${process.pid}.${Date.now()}`);
+    var tempPath = path.join(realFlagDir, `.caveman-lite-active.${process.pid}.${Date.now()}`);
     const O_NOFOLLOW = typeof fs.constants.O_NOFOLLOW === 'number' ? fs.constants.O_NOFOLLOW : 0;
     const flags = fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | O_NOFOLLOW;
     let fd;
@@ -111,7 +120,13 @@ function safeWriteFlag(flagPath, content) {
     }
     fs.renameSync(tempPath, realFlagPath);
   } catch (e) {
-    // Silent fail — flag is best-effort
+    // Silent fail — flag is best-effort. If we threw after the temp file was
+    // created (e.g. the rename failed), clean it up so we don't orphan it.
+    // tempPath is declared with `var` so it's in scope here; guard the unlink
+    // so cleanup itself can never throw out of the hook.
+    try {
+      if (typeof tempPath === 'string') fs.unlinkSync(tempPath);
+    } catch (e2) { /* best-effort cleanup */ }
   }
 }
 

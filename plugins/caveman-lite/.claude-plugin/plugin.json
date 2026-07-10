@@ -1,6 +1,7 @@
 {
   "name": "caveman-lite",
   "description": "Ultra-compressed communication mode (hooks only) — no agents, no slash commands, no skills. Safe to install alongside multi-agent orchestration layers.",
+  "version": "1.0.0",
   "author": {
     "name": "Aaron James",
     "url": "https://github.com/ajustinjames"

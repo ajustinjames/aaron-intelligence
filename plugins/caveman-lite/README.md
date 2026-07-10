@@ -40,3 +40,14 @@ Same resolution order as upstream caveman:
 3. `full` (default)
 
 Valid modes: `off`, `lite`, `full`, `ultra`, `wenyan-lite`, `wenyan`/`wenyan-full`, `wenyan-ultra`.
+
+## Security note
+
+The `/caveman-lite` command passes its argument (`$ARGUMENTS`) to a shell
+command, and Claude Code does not currently shell-escape that interpolation
+([anthropics/claude-code#16163](https://github.com/anthropics/claude-code/issues/16163)).
+The command is gated human-only with `disable-model-invocation: true`, so the
+model cannot invoke it with an attacker-supplied argument, and the set-mode
+script whitelist-validates the token against the valid-modes list. Even so:
+only type or paste a trusted mode token (e.g. `lite`, `off`) as the argument —
+never an untrusted string.
