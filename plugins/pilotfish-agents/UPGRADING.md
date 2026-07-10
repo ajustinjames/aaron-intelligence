@@ -29,7 +29,9 @@ curl -fsSL "https://raw.githubusercontent.com/Nanako0129/pilotfish/main/template
 
 Apply upstream changes to the vendored files. If you've locally customized an agent (tuned a prompt, changed a `model`/`effort` field), reconcile by hand rather than blind-overwrite — same rule the upstream runbook itself follows for user customizations.
 
-**Standing local deltas (never blind-overwrite these away):** since plugin `1.3.0`, the four non-allowlisted agents (`mech-executor`, `executor`, `verifier`, `security-executor`) carry `disallowedTools: Task, Agent, Workflow` in frontmatter plus a leading "leaf agent — never delegate" paragraph in the body. This blocks recursive subagent spawning at the tool level (issue #9); upstream `1.1.1` has neither. When syncing, re-apply both to any upstream-changed agent file.
+**Standing local deltas (never blind-overwrite these away):** since plugin `1.3.0`, the four non-allowlisted agents (`mech-executor`, `executor`, `verifier`, `security-executor`) carry a `disallowedTools` denylist in frontmatter (`Task, Agent, Workflow, SendMessage` for the three executors; that set plus `Write, Edit, NotebookEdit` for `verifier`) plus a leading "leaf agent — never delegate" paragraph in the body. This blocks recursive subagent spawning and cross-agent messaging at the tool level (issues #9, #14); upstream `1.1.1` has neither. When syncing, re-apply both to any upstream-changed agent file.
+
+**Denylist upkeep (do this on every Claude Code version bump, not just upstream syncs):** the leaf-agent guarantee is a denylist, so it fails *open* — any subagent-spawning or agent-messaging tool we don't name is allowed by default. On each Claude Code version bump, re-verify the complete set of tool names in those two categories (currently `Task`, `Agent`, `Workflow` for spawning and `SendMessage` for messaging) and add any newly-introduced names to each role's `disallowedTools`. A denylist that misses a new tool silently reopens the hole it was meant to close.
 
 ## 3. Bump versions
 

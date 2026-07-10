@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `hooks/caveman-activate.js` — `SessionStart` hook; writes the mode flag and emits the ruleset text (per intensity level) as hidden session context.
   - `hooks/caveman-mode-tracker.js` — `UserPromptSubmit` hook; reinforces the active mode each turn.
   - `hooks/caveman-set-mode.js` — invoked by the `/caveman-lite` command to deterministically switch/clear the mode flag.
-  - `commands/caveman-lite.md` — the `/caveman-lite [lite|full|ultra|wenyan|off]` slash command definition.
+  - `commands/caveman-lite.md` — the `/caveman-lite [off|lite|full|ultra|wenyan|wenyan-lite|wenyan-ultra]` slash command definition.
   - `caveman-lite.md` — zero-runtime, copy-pasteable prompt-only version of the same behavior, for contexts where even hooks are unwanted.
   - `README.md` — plugin-level docs (what's included/excluded, config resolution order, valid modes).
 - `plugins/pilotfish-agents/` — the other hosted plugin, a vendored (point-in-time copy, not a live mirror) subset of [`Nanako0129/pilotfish`](https://github.com/Nanako0129/pilotfish); named `pilotfish-agents` (not `pilotfish`) to avoid colliding with upstream's own name in the marketplace/install namespace:

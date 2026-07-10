@@ -24,11 +24,33 @@ if ((process.env.PILOTFISH_ORCHESTRATOR || '').trim().toLowerCase() === 'off') {
   process.exit(0);
 }
 
+// Cap on the injected policy size. ORCHESTRATION.md is a small vendored file;
+// a wildly-oversized one is a signal something is wrong, not content to dump
+// verbatim into model context. Skip injection past this.
+const MAX_POLICY_BYTES = 65536;
+
 const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || path.join(__dirname, '..');
 const policyPath = path.join(pluginRoot, 'ORCHESTRATION.md');
 
 try {
-  const raw = fs.readFileSync(policyPath, 'utf8');
+  // Containment: the policy must resolve to a file inside the plugin dir. If
+  // CLAUDE_PLUGIN_ROOT is manipulated to escape it, emit nothing.
+  const pluginDir = path.resolve(__dirname, '..');
+  const resolvedPolicy = path.resolve(policyPath);
+  if (resolvedPolicy !== path.join(pluginDir, 'ORCHESTRATION.md') &&
+      !resolvedPolicy.startsWith(pluginDir + path.sep)) {
+    process.stdout.write('OK');
+    process.exit(0);
+  }
+
+  // Byte cap: stat first and skip injection if the file is oversized.
+  const st = fs.statSync(resolvedPolicy);
+  if (!st.isFile() || st.size > MAX_POLICY_BYTES) {
+    process.stdout.write('OK');
+    process.exit(0);
+  }
+
+  const raw = fs.readFileSync(resolvedPolicy, 'utf8');
   // Strip the <!-- pilotfish:begin --> / <!-- pilotfish:end --> / version
   // marker comments — they're for CLAUDE.md block management, not context.
   const policy = raw
