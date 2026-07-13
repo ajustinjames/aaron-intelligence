@@ -1,0 +1,10 @@
+{
+  "name": "cross-model-delegate",
+  "description": "Skill that routes suitable work to OpenAI Codex (`codex`) and Google Antigravity CLI (`agy`, runs Gemini) — separate subscription pools, zero Anthropic tokens. Extends pilotfish-style tiering across vendors instead of within one. Off by default unless both CLIs are present; honors CROSS_MODEL_DELEGATE=off.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Aaron James",
+    "url": "https://github.com/ajustinjames"
+  },
+  "skills": ["./skills/cross-model-delegate"]
+}

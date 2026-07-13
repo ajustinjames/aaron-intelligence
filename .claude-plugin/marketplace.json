@@ -16,6 +16,11 @@
       "name": "pilotfish-agents",
       "source": "./plugins/pilotfish-agents",
       "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) plus hooks that load and reinforce the delegation policy each turn. Portable multi-model orchestration; only the settings.json fallbackModel step is manual — see plugin README."
+    },
+    {
+      "name": "cross-model-delegate",
+      "source": "./plugins/cross-model-delegate",
+      "description": "Skill that routes suitable work (second-opinion diagnosis, cross-model review, web research, bulk repo-wide refactors) to OpenAI Codex and Google Antigravity CLI — separate subscription pools, zero Anthropic tokens. Requires codex/agy installed and authenticated; off by default otherwise."
     }
   ]
 }
