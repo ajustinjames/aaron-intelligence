@@ -1,6 +1,6 @@
 {
   "name": "pilotfish-agents",
-  "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) plus hooks that reinforce the delegation policy each turn so it doesn't decay under a strong task prompt. All six roles are leaf agents: subagent-spawning and cross-agent-messaging tools (Task/Agent/Workflow/SendMessage) are disallowed at the tool level, not just by prompt. Named distinctly from upstream's \"pilotfish\" to avoid marketplace name collisions. The settings.json fallbackModel key stays a manual step — see README.md.",
+  "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) plus hooks that reinforce the delegation policy each turn so it doesn't decay under a strong task prompt. All six roles are leaf agents: each carries a tools allowlist that omits subagent-spawning and cross-agent-messaging tools, so the guarantee fails closed rather than needing denylist upkeep. Named distinctly from upstream's \"pilotfish\" to avoid marketplace name collisions. The settings.json fallbackModel key stays a manual step — see README.md.",
   "version": "1.5.0",
   "author": {
     "name": "Aaron James",

@@ -26,7 +26,8 @@ If `CROSS_MODEL_DELEGATE=off` is set, or neither `codex` nor `agy` is on `PATH`,
 Shell out directly, non-interactively, with a bounded timeout:
 
 ```
-codex exec --sandbox workspace-write "<task prompt>"
+codex exec --sandbox read-only "<task prompt>"        # research, second opinions, reviews
+codex exec --sandbox workspace-write "<task prompt>"  # only when the task must edit files
 agy -p "<task prompt>" --print-timeout <seconds>
 ```
 
