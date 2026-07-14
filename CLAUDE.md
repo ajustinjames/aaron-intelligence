@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`aaron-intelligence` is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`). It hosts three plugins of its own, `caveman-lite`, `pilotfish-agents`, and `cross-model-delegate`, and its README doubles as a curated list of other marketplaces/plugins worth installing. There is no build system or package manager; a small GitHub Actions CI (`.github/workflows/ci.yml`) syntax-checks hooks, validates manifests, and runs the one dependency-free `node --test` suite — everything runs directly via the Claude Code CLI or `node`, no `npm install` step.
+`aaron-intelligence` is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`). It hosts four plugins of its own, `caveman-lite`, `pilotfish-agents`, `cross-model-delegate`, and `aaron-intelligence` (the marketplace and this hosted plugin deliberately share a name), and its README doubles as a curated list of other marketplaces/plugins worth installing. There is no build system or package manager; a small GitHub Actions CI (`.github/workflows/ci.yml`) syntax-checks hooks, validates manifests, and runs the dependency-free `node --test` suites — everything runs directly via the Claude Code CLI or `node`, no `npm install` step.
 
 ## Repo structure
 
@@ -28,6 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `UPGRADING.md` — how to pull upstream changes into the vendored copy and re-sync any active global (non-plugin) install.
   - `README.md` — what's shipped vs. what requires manual `settings.json`/`CLAUDE.md` steps, both install modes, uninstall.
 - `plugins/cross-model-delegate/` — a skill-only plugin (no hooks/agents/commands): `skills/cross-model-delegate/SKILL.md` defines when and how to shell out to OpenAI Codex (`codex`) or Google Antigravity CLI (`agy`) for work that can run on their separate subscriptions instead of Anthropic tokens. Referenced from `ORCHESTRATION.md`'s routing table; off by default unless `codex`/`agy` are on `PATH`, and honors `CROSS_MODEL_DELEGATE=off`.
+- `plugins/aaron-intelligence/` — Aaron's personal-enhancement plugin: a **grab-bag of hooks/skills/commands tuned to how he works**, meant to grow over time (not single-purpose). Its `.claude-plugin/plugin.json` inlines a `PreToolUse` hook (matcher `Bash`).
+  - `hooks/bash-tool-guard.js` — the first component. Soft-blocks Bash commands that stand in for the file tools (`cat`/`head`/`tail`/`less`/`more <file>` → Read; `sed -i`/`perl -i` → Edit; `echo`/`printf`/`cat`/`tee` `> file` → Write/Edit) by returning the modern PreToolUse `deny` JSON (`hookSpecificOutput.permissionDecision`), whose reason Claude re-plans around. **Precision-first, fail-open:** anything in a pipe, `tail -f`, stdout-only echo, standalone `awk`/`sed`/`grep`/`find`, and program-output redirects are intentionally allowed; any parse error or oversized/malformed input allows the command. Off via `AARON_INTELLIGENCE_GUARD=off`. Quotes are masked before operator detection so `>`/`|` inside string literals don't false-positive.
+  - `hooks/bash-tool-guard.test.js` — `node --test` suite (run in CI); assert deny/allow by spawning the hook with synthetic PreToolUse payloads. When adding a new component to this plugin, give it its own section in the plugin README's Components table and, if it has logic, its own `*.test.js`.
 - `README.md` — repo-level docs: how to add this marketplace and install its plugins, plus the curated table of other plugins/marketplaces.
 
 ## Architecture notes for `caveman-lite`

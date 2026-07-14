@@ -74,3 +74,6 @@ jobs:
 
       - name: Run flag-helper tests
         run: node --test plugins/caveman-lite/hooks/caveman-config.test.js
+
+      - name: Run bash-tool-guard tests
+        run: node --test plugins/aaron-intelligence/hooks/bash-tool-guard.test.js
