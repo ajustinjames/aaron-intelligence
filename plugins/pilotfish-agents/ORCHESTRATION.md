@@ -22,4 +22,6 @@ Delegation rules:
 - Non-trivial changes get a fresh-context `verifier` pass before you report them done; prefer that over self-review.
 - Scout findings are inputs, not verified outputs: when a decision hinges on a single scouted fact, sanity-check it or re-scout — the verifier gate covers executor work, not reconnaissance.
 - Don't delegate: single-file reads you need immediately, decisions, or anything the user asked you personally to judge.
+
+If the `cross-model-delegate` skill is installed and `codex`/`agy` are available, some work can route off the Anthropic bill entirely instead of to a role agent: second-opinion diagnosis, cross-model review, web research needing Search grounding, and whole-repo/bulk refactors >15 files. See that skill for the routing table and constraints (sandboxed, non-interactive, output treated as untrusted). Judgment, planning, ambiguity resolution, final review, and anything security-sensitive still never leave the main session.
 <!-- pilotfish:end -->

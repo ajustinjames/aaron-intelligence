@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`aaron-intelligence` is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`). It hosts two plugins of its own, `caveman-lite` and `pilotfish-agents`, and its README doubles as a curated list of other marketplaces/plugins worth installing. There is no build system, package manager, or test suite — it's marketplace metadata plus a handful of Node hook scripts and vendored agent definitions, run directly by the Claude Code CLI (no `npm install` step).
+`aaron-intelligence` is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`). It hosts three plugins of its own, `caveman-lite`, `pilotfish-agents`, and `cross-model-delegate`, and its README doubles as a curated list of other marketplaces/plugins worth installing. There is no build system or package manager; a small GitHub Actions CI (`.github/workflows/ci.yml`) syntax-checks hooks, validates manifests, and runs the one dependency-free `node --test` suite — everything runs directly via the Claude Code CLI or `node`, no `npm install` step.
 
 ## Repo structure
 
@@ -20,13 +20,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `README.md` — plugin-level docs (what's included/excluded, config resolution order, valid modes).
 - `plugins/pilotfish-agents/` — the other hosted plugin, a vendored (point-in-time copy, not a live mirror) subset of [`Nanako0129/pilotfish`](https://github.com/Nanako0129/pilotfish); named `pilotfish-agents` (not `pilotfish`) to avoid colliding with upstream's own name in the marketplace/install namespace:
   - `.claude-plugin/plugin.json` — plugin manifest; wires `SessionStart` and `UserPromptSubmit` hooks (see `hooks/`) plus the `agents/` dir. No commands.
-  - `agents/` — six role subagent definitions (`scout.md`, `Explore.md`, `mech-executor.md`, `executor.md`, `verifier.md`, `security-executor.md`) from upstream's `templates/agents/`, with one standing local hardening (issue #9): every role is a leaf agent — `scout`/`Explore` via their `tools:` allowlist, the other four via `disallowedTools: Task, Agent, Workflow` plus a leaf-agent paragraph in the body — so subagents can't recursively spawn subagents. Preserve this delta when syncing upstream (see `UPGRADING.md`).
+  - `agents/` — six role subagent definitions (`scout.md`, `Explore.md`, `mech-executor.md`, `executor.md`, `verifier.md`, `security-executor.md`) from upstream's `templates/agents/`, with one standing local hardening (issues #9, #14): every role is a leaf agent, enforced via a `tools:` allowlist (fails closed) plus a leaf-agent paragraph in the body — so subagents can't recursively spawn subagents. Preserve this delta when syncing upstream (see `UPGRADING.md`).
   - `ORCHESTRATION.md` — copy of upstream's `templates/claude-md.orchestration.md`; the main-session delegation policy. Plugins can't inject content into a user's global `CLAUDE.md`, so upstream ships this to paste manually — but the `SessionStart` hook here reads this same file and injects it as session context, making that paste optional.
   - `hooks/orchestrator-activate.js` — `SessionStart` hook; reads `ORCHESTRATION.md`, strips the `<!-- pilotfish:* -->` markers, emits the policy as hidden session context. Local addition, not from upstream (upstream has no hooks).
   - `hooks/orchestrator-reminder.js` — `UserPromptSubmit` hook; re-injects a one-paragraph delegation reminder every turn so the policy doesn't decay under a strong task prompt (the fix for issue #6, "pilotfish failed to trigger"). Both hooks honor `PILOTFISH_ORCHESTRATOR=off`.
   - `VERSION` — upstream version this vendor tracks; bump alongside `UPGRADING.md`'s sync steps.
   - `UPGRADING.md` — how to pull upstream changes into the vendored copy and re-sync any active global (non-plugin) install.
   - `README.md` — what's shipped vs. what requires manual `settings.json`/`CLAUDE.md` steps, both install modes, uninstall.
+- `plugins/cross-model-delegate/` — a skill-only plugin (no hooks/agents/commands): `skills/cross-model-delegate/SKILL.md` defines when and how to shell out to OpenAI Codex (`codex`) or Google Antigravity CLI (`agy`) for work that can run on their separate subscriptions instead of Anthropic tokens. Referenced from `ORCHESTRATION.md`'s routing table; off by default unless `codex`/`agy` are on `PATH`, and honors `CROSS_MODEL_DELEGATE=off`.
 - `README.md` — repo-level docs: how to add this marketplace and install its plugins, plus the curated table of other plugins/marketplaces.
 
 ## Architecture notes for `caveman-lite`
