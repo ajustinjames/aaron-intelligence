@@ -3,27 +3,26 @@
 set -euo pipefail
 
 TMUX_SESSION="${CLAUDE_RC_TMUX_SESSION:-claude-rc}"
-
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_WORKSPACE_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-WORKSPACE_ROOT="${CLAUDE_RC_WORKSPACE_ROOT:-$DEFAULT_WORKSPACE_ROOT}"
+WORKSPACE_ROOT="${2:-${CLAUDE_RC_WORKSPACE_ROOT:-$PWD}}"
 
 PROJECTS=()
 
 usage() {
   cat <<'EOF'
-Usage: scripts/claude-remote-control.sh <command>
+Usage: claude-remote-control <command> [workspace-root]
 
 Commands:
-  start    Start one project-scoped Remote Control server per repository
+  start    Start one server per repository beneath workspace-root
   stop     Stop all Remote Control servers managed by this script
-  restart  Stop and start the servers
+  restart  Stop and start the servers beneath workspace-root
   status   Show the managed tmux windows
   attach   Attach to the managed tmux session
 
 Environment:
-  CLAUDE_RC_WORKSPACE_ROOT  Parent directory containing the repositories
+  CLAUDE_RC_WORKSPACE_ROOT  Fallback when workspace-root is omitted
   CLAUDE_RC_TMUX_SESSION    tmux session name (default: claude-rc)
+
+workspace-root defaults to the current directory.
 EOF
 }
 
@@ -50,6 +49,13 @@ validate_configuration() {
   require_command claude
   require_command find
   require_command tmux
+
+  if [[ ! -d "$WORKSPACE_ROOT" ]]; then
+    echo "Workspace directory not found: $WORKSPACE_ROOT" >&2
+    exit 1
+  fi
+
+  WORKSPACE_ROOT="$(cd -- "$WORKSPACE_ROOT" && pwd)"
   discover_projects
 }
 
