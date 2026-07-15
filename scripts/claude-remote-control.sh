@@ -12,7 +12,7 @@ usage() {
 Usage: claude-remote-control <command> [workspace-root]
 
 Commands:
-  start    Start one server per repository beneath workspace-root
+  start    Start one workspace server plus one per discovered repository
   stop     Stop all Remote Control servers managed by this script
   restart  Stop and start the servers beneath workspace-root
   status   Show the managed tmux windows
@@ -60,14 +60,28 @@ validate_configuration() {
 }
 
 server_command() {
-  local project_dir="$1"
-  local project_name="${project_dir#"$WORKSPACE_ROOT"/}"
+  local target_dir="$1"
+  local target_name="$2"
   local command
 
   printf -v command \
     'cd %q && exec claude remote-control --name %q --spawn same-dir --capacity 3' \
-    "$project_dir" "$project_name"
+    "$target_dir" "$target_name"
   printf '%s' "$command"
+}
+
+add_server_window() {
+  local target_dir="$1"
+  local target_name="$2"
+  local window_name="${target_name//\//-}"
+
+  if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    tmux new-session -d -s "$TMUX_SESSION" -n "$window_name" \
+      "$(server_command "$target_dir" "$target_name")"
+  else
+    tmux new-window -d -t "$TMUX_SESSION" -n "$window_name" \
+      "$(server_command "$target_dir" "$target_name")"
+  fi
 }
 
 start_servers() {
@@ -79,21 +93,13 @@ start_servers() {
     exit 1
   fi
 
+  add_server_window "$WORKSPACE_ROOT" "workspace"
+
   local project_dir
   local project_name
-  local window_name
-  local first=1
   for project_dir in "${PROJECTS[@]}"; do
     project_name="${project_dir#"$WORKSPACE_ROOT"/}"
-    window_name="${project_name//\//-}"
-    if (( first )); then
-      tmux new-session -d -s "$TMUX_SESSION" -n "$window_name" \
-        "$(server_command "$project_dir")"
-      first=0
-    else
-      tmux new-window -d -t "$TMUX_SESSION" -n "$window_name" \
-        "$(server_command "$project_dir")"
-    fi
+    add_server_window "$project_dir" "$project_name"
   done
 
   echo "Started project-scoped Claude Remote Control servers:"
