@@ -6,7 +6,7 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 
 ## Project-scoped Remote Control
 
-[`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) recursively discovers Git repositories in the workspace and runs one named Claude Remote Control server from each repository root, with up to three concurrent sessions per repository. New repositories are picked up automatically the next time the launcher starts.
+[`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) starts a named Claude Remote Control server from the workspace root, then recursively discovers Git repositories beneath it and starts another server from each repository root. The workspace-level session can clone or initialize repositories; project sessions load their own instructions and Git context. Each target allows up to three concurrent sessions, and newly added repositories are picked up automatically the next time the launcher starts.
 
 ```bash
 ./scripts/claude-remote-control.sh start /path/to/workspace
