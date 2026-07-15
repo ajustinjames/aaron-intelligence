@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+TMUX_SESSION="${CLAUDE_RC_TMUX_SESSION:-claude-rc}"
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_WORKSPACE_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+WORKSPACE_ROOT="${CLAUDE_RC_WORKSPACE_ROOT:-$DEFAULT_WORKSPACE_ROOT}"
+
+PROJECTS=()
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/claude-remote-control.sh <command>
+
+Commands:
+  start    Start one project-scoped Remote Control server per repository
+  stop     Stop all Remote Control servers managed by this script
+  restart  Stop and start the servers
+  status   Show the managed tmux windows
+  attach   Attach to the managed tmux session
+
+Environment:
+  CLAUDE_RC_WORKSPACE_ROOT  Parent directory containing the repositories
+  CLAUDE_RC_TMUX_SESSION    tmux session name (default: claude-rc)
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Required command not found: $1" >&2
+    exit 1
+  fi
+}
+
+discover_projects() {
+  mapfile -d '' PROJECTS < <(
+    find "$WORKSPACE_ROOT" -mindepth 1 -type d \
+      -exec test -d '{}/.git' ';' -print0 -prune
+  )
+
+  if (( ${#PROJECTS[@]} == 0 )); then
+    echo "No Git repositories found under: $WORKSPACE_ROOT" >&2
+    exit 1
+  fi
+}
+
+validate_configuration() {
+  require_command claude
+  require_command find
+  require_command tmux
+  discover_projects
+}
+
+server_command() {
+  local project_dir="$1"
+  local project_name="${project_dir#"$WORKSPACE_ROOT"/}"
+  local command
+
+  printf -v command \
+    'cd %q && exec claude remote-control --name %q --spawn same-dir --capacity 3' \
+    "$project_dir" "$project_name"
+  printf '%s' "$command"
+}
+
+start_servers() {
+  validate_configuration
+
+  if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "Remote Control tmux session already exists: $TMUX_SESSION" >&2
+    echo "Run '$0 status' or '$0 restart'." >&2
+    exit 1
+  fi
+
+  local project_dir
+  local project_name
+  local window_name
+  local first=1
+  for project_dir in "${PROJECTS[@]}"; do
+    project_name="${project_dir#"$WORKSPACE_ROOT"/}"
+    window_name="${project_name//\//-}"
+    if (( first )); then
+      tmux new-session -d -s "$TMUX_SESSION" -n "$window_name" \
+        "$(server_command "$project_dir")"
+      first=0
+    else
+      tmux new-window -d -t "$TMUX_SESSION" -n "$window_name" \
+        "$(server_command "$project_dir")"
+    fi
+  done
+
+  echo "Started project-scoped Claude Remote Control servers:"
+  status_servers
+}
+
+stop_servers() {
+  require_command tmux
+
+  if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "Remote Control tmux session is not running: $TMUX_SESSION"
+    return
+  fi
+
+  tmux kill-session -t "$TMUX_SESSION"
+  echo "Stopped Remote Control tmux session: $TMUX_SESSION"
+}
+
+status_servers() {
+  require_command tmux
+
+  if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "Remote Control tmux session is not running: $TMUX_SESSION"
+    return 1
+  fi
+
+  tmux list-windows -t "$TMUX_SESSION" \
+    -F '#{window_name}: #{?pane_dead,stopped,running} (pid #{pane_pid})'
+}
+
+attach_servers() {
+  require_command tmux
+
+  if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "Remote Control tmux session is not running: $TMUX_SESSION" >&2
+    exit 1
+  fi
+
+  exec tmux attach-session -t "$TMUX_SESSION"
+}
+
+case "${1:-}" in
+  start)
+    start_servers
+    ;;
+  stop)
+    stop_servers
+    ;;
+  restart)
+    stop_servers
+    start_servers
+    ;;
+  status)
+    status_servers
+    ;;
+  attach)
+    attach_servers
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac
