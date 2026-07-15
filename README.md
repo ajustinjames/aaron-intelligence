@@ -9,18 +9,23 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 [`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) recursively discovers Git repositories in the workspace and runs one named Claude Remote Control server from each repository root, with up to three concurrent sessions per repository. New repositories are picked up automatically the next time the launcher starts.
 
 ```bash
-./scripts/claude-remote-control.sh start
+./scripts/claude-remote-control.sh start /path/to/workspace
 ./scripts/claude-remote-control.sh status
 ./scripts/claude-remote-control.sh attach
 ./scripts/claude-remote-control.sh stop
 ```
 
-The launcher derives the workspace root from this checkout. Override its location when needed:
+Install a symlink to run it from anywhere:
 
 ```bash
-CLAUDE_RC_WORKSPACE_ROOT=/path/to/workspace \
-  ./scripts/claude-remote-control.sh start
+mkdir -p ~/.local/bin
+ln -s /path/to/aaron-intelligence/scripts/claude-remote-control.sh \
+  ~/.local/bin/claude-remote-control
+
+claude-remote-control start /path/to/workspace
 ```
+
+If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
 
 ## Using this marketplace
 
