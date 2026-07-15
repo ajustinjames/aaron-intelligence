@@ -21,6 +21,11 @@
       "name": "cross-model-delegate",
       "source": "./plugins/cross-model-delegate",
       "description": "Skill that routes suitable work (second-opinion diagnosis, cross-model review, web research, bulk repo-wide refactors) to OpenAI Codex and Google Antigravity CLI — separate subscription pools, zero Anthropic tokens. Requires codex/agy installed and authenticated; off by default otherwise."
+    },
+    {
+      "name": "aaron-intelligence",
+      "source": "./plugins/aaron-intelligence",
+      "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. First component: a PreToolUse Bash guard that soft-blocks using the shell (cat/head/tail, sed -i, echo>file) as a stand-in for the Read/Edit/Write tools and tells Claude which tool to use instead. Precision-first — pipelines, tail -f, awk/grep, and program-output redirects are left alone. Off via AARON_INTELLIGENCE_GUARD=off."
     }
   ]
 }
