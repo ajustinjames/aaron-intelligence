@@ -15,17 +15,17 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 ./scripts/claude-remote-control.sh stop
 ```
 
-Install a symlink to run it from anywhere:
+Install it on your user `PATH` to run it from anywhere:
 
 ```bash
 mkdir -p ~/.local/bin
-ln -s /path/to/aaron-intelligence/scripts/claude-remote-control.sh \
+install -m 755 scripts/claude-remote-control.sh \
   ~/.local/bin/claude-remote-control
 
 claude-remote-control start /path/to/workspace
 ```
 
-If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
+Rerun the `install` command after updating the checkout. During development, you can symlink the script instead so changes take effect immediately. If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
 
 ## Using this marketplace
 
