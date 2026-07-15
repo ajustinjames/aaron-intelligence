@@ -4,6 +4,24 @@ My random enhancement for AI tools.
 
 This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It hosts a few small plugins of its own ([`caveman-lite`](./plugins/caveman-lite), [`pilotfish-agents`](./plugins/pilotfish-agents), [`cross-model-delegate`](./plugins/cross-model-delegate)) and is otherwise a curated jumping-off point for finding good Claude Code plugins, official and third-party.
 
+## Project-scoped Remote Control
+
+[`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) recursively discovers Git repositories in the workspace and runs one named Claude Remote Control server from each repository root, with up to three concurrent sessions per repository. New repositories are picked up automatically the next time the launcher starts.
+
+```bash
+./scripts/claude-remote-control.sh start
+./scripts/claude-remote-control.sh status
+./scripts/claude-remote-control.sh attach
+./scripts/claude-remote-control.sh stop
+```
+
+The launcher derives the workspace root from this checkout. Override its location when needed:
+
+```bash
+CLAUDE_RC_WORKSPACE_ROOT=/path/to/workspace \
+  ./scripts/claude-remote-control.sh start
+```
+
 ## Using this marketplace
 
 Add this repo as a marketplace source:
