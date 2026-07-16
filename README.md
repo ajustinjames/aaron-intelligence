@@ -28,6 +28,18 @@ claude-remote-control start /path/to/workspace
 
 Rerun the `install` command after updating the checkout. During development, you can symlink the script instead so changes take effect immediately. If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
 
+To manage Claude and Codex Remote Control together, run the combined launcher directly from this checkout:
+
+```bash
+./scripts/remote-control.sh start /path/to/workspace
+./scripts/remote-control.sh status
+./scripts/remote-control.sh pair
+./scripts/remote-control.sh update /path/to/workspace
+./scripts/remote-control.sh stop
+```
+
+Claude still receives one server per discovered repository. Codex runs its single app-server daemon with the supplied workspace as its working directory.
+
 ## Using this marketplace
 
 Add this repo as a marketplace source:
