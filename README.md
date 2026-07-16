@@ -12,6 +12,7 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 ./scripts/claude-remote-control.sh start /path/to/workspace
 ./scripts/claude-remote-control.sh status
 ./scripts/claude-remote-control.sh attach
+./scripts/claude-remote-control.sh update /path/to/workspace
 ./scripts/claude-remote-control.sh stop
 ```
 

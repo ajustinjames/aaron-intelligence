@@ -15,6 +15,7 @@ Commands:
   start    Start one workspace server plus one per discovered repository
   stop     Stop all Remote Control servers managed by this script
   restart  Stop and start the servers beneath workspace-root
+  update   Stop servers, update Claude Code, then start beneath workspace-root
   status   Show the managed tmux windows
   attach   Attach to the managed tmux session
 
@@ -118,6 +119,13 @@ stop_servers() {
   echo "Stopped Remote Control tmux session: $TMUX_SESSION"
 }
 
+update_servers() {
+  stop_servers
+  require_command claude
+  claude update
+  start_servers
+}
+
 status_servers() {
   require_command tmux
 
@@ -151,6 +159,9 @@ case "${1:-}" in
   restart)
     stop_servers
     start_servers
+    ;;
+  update)
+    update_servers
     ;;
   status)
     status_servers
