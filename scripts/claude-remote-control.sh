@@ -24,6 +24,9 @@ Environment:
   CLAUDE_RC_TMUX_SESSION    tmux session name (default: claude-rc)
 
 workspace-root defaults to the current directory.
+
+Run this script on the host, not inside an isolated agent sandbox. A sandbox may
+not be able to see or stop the host tmux session.
 EOF
 }
 

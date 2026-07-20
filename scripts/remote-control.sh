@@ -4,6 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_LAUNCHER="$SCRIPT_DIR/claude-remote-control.sh"
+CODEX_LAUNCHER="$SCRIPT_DIR/codex-remote-control.sh"
 WORKSPACE_ROOT="${2:-${REMOTE_CONTROL_WORKSPACE_ROOT:-$PWD}}"
 
 usage() {
@@ -23,6 +24,9 @@ Environment:
   REMOTE_CONTROL_WORKSPACE_ROOT  Fallback when workspace-root is omitted
 
 workspace-root defaults to the current directory.
+
+Run this script on the host, not inside an isolated agent sandbox. A sandbox may
+not be able to see or control the host tmux session or app-server daemon.
 EOF
 }
 
@@ -43,11 +47,10 @@ resolve_workspace() {
 }
 
 start_services() {
-  require_command codex
   resolve_workspace
 
   "$CLAUDE_LAUNCHER" start "$WORKSPACE_ROOT"
-  if ! (cd -- "$WORKSPACE_ROOT" && codex remote-control start); then
+  if ! "$CODEX_LAUNCHER" start "$WORKSPACE_ROOT"; then
     echo "Codex Remote Control failed to start; stopping Claude Remote Control." >&2
     "$CLAUDE_LAUNCHER" stop
     return 1
@@ -58,12 +61,7 @@ stop_services() {
   local failed=0
 
   "$CLAUDE_LAUNCHER" stop || failed=1
-  if command -v codex >/dev/null 2>&1; then
-    codex remote-control stop || failed=1
-  else
-    echo "Required command not found: codex" >&2
-    failed=1
-  fi
+  "$CODEX_LAUNCHER" stop || failed=1
 
   return "$failed"
 }
@@ -99,8 +97,7 @@ case "${1:-}" in
     exec "$CLAUDE_LAUNCHER" attach
     ;;
   pair)
-    require_command codex
-    codex remote-control pair
+    "$CODEX_LAUNCHER" pair
     ;;
   -h|--help|help)
     usage
