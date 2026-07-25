@@ -23,6 +23,8 @@ This file provides guidance to coding agents working in this repository.
 - Before starting a Codex or Claude session, read and follow `REMOTE_CONTROL.md`; do not infer the launch procedure from the CLI alone.
 - Run Remote Control commands on the host, not inside an isolated agent sandbox, because the sandbox may use a different process or tmux namespace.
 - For Claude, start `claude remote-control` from the target repository in a detached tmux session. Use one session per repository and a short, unique name beginning with `claude-rc-`.
+- Inspect the tmux pane after launch. If Claude is waiting for trust, spawn mode, or any other interactive confirmation, show the user the prompt and ask for permission before sending input, including Enter to accept a default.
+- After the user explicitly approves and the input is sent, inspect the pane again and verify that Remote Control reports `Ready` or `Connected`; a live process alone is not sufficient.
 - Do not substitute a foreground `claude` process when a Remote Control session is requested.
 
 ## Making changes

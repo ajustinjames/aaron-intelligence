@@ -39,6 +39,26 @@ tmux new-session -d -s claude-rc-my-project \
 Use one tmux session per repository. The `claude-rc-` prefix lets the shutdown
 helper distinguish these sessions from unrelated tmux work.
 
+After starting the session, inspect its output without attaching or sending
+input:
+
+```bash
+tmux capture-pane -p -t claude-rc-my-project -S -100
+```
+
+Claude may pause for a trust confirmation, spawn-mode choice, or another
+interactive prompt. Report the exact prompt to the user and ask for permission
+before sending any response, including accepting a default with Enter. Only
+after the user explicitly approves should you send the requested input:
+
+```bash
+tmux send-keys -t claude-rc-my-project Enter
+```
+
+Inspect the pane again and confirm that Remote Control reports `Ready` or
+`Connected`. A live tmux pane or Claude process alone does not prove that Remote
+Control finished starting.
+
 Useful tmux commands:
 
 ```bash
