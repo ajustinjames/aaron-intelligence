@@ -13,6 +13,7 @@ in its own section below; new ones get added over time.
 | 3 | grill-me-issue | skill | Same interview, but writes the resolved plan up as a GitHub issue. |
 | 4 | repo-standards | skill | One canonical branch ruleset + sole CODEOWNER, applied via `gh`. Public repos. |
 | 5 | private-repo-standards | skill | Best-effort equivalent for private repos on GitHub Free, where rulesets are Pro-gated. |
+| 6 | unify-agent-instructions | skill | Makes `AGENTS.md` the one instructions file and `CLAUDE.md` a symlink to it. |
 
 ---
 
@@ -142,6 +143,20 @@ unavailable, so this is a separate, weaker toolkit rather than a variant of #4.
 
 The skill is required to close by stating plainly what is *not* enforced, so a
 private repo never looks more protected than it is.
+
+---
+
+## 6. unify-agent-instructions
+
+One instructions file per repo: `AGENTS.md` holds the content, `CLAUDE.md` is a
+git-tracked symlink (`120000`) pointing at it. `AGENTS.md` is the cross-tool
+convention and Claude Code follows the symlink, so every tool reads the same file
+and there's nothing to keep in sync.
+
+It classifies before touching anything — `git mv` when only `CLAUDE.md` exists,
+drop-and-link when `CLAUDE.md` is just a stub pointing at `AGENTS.md`, and a hard
+stop when both files are real and differ (each may hold rules the other lacks) or
+when `CLAUDE.md` links somewhere unexpected. Also audits every repo at once.
 
 ## Install
 
