@@ -8,15 +8,42 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 
 [`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) starts a named Claude Remote Control server from the workspace root, then recursively discovers Git repositories beneath it and starts another server from each repository root. The workspace-level session can clone or initialize repositories; project sessions load their own instructions and Git context. Each target allows up to three concurrent sessions, and newly added repositories are picked up automatically the next time the launcher starts.
 
+**Why one server per repository:** a Remote Control server is bound to the directory it was started from. Sessions either share that directory (`--spawn same-dir`) or get worktrees of that repository (`--spawn worktree`), and a remote client cannot pick a different one. Reaching several repositories from a phone therefore needs several servers. This is unlike Codex, whose single app-server is host-scoped and lets the client choose among projects.
+
+> **Size the host first.** Each server is a separate long-lived Claude process holding roughly 400 MB resident, before any session runs. A workspace with a dozen repositories wants several gigabytes just to idle, and exhausting memory on a small VM or LXC container presents as the whole machine hanging rather than as a failed command. Run `list` before your first `start`:
+>
+> ```bash
+> ./scripts/claude-remote-control.sh list /path/to/workspace
+> ```
+>
+> `list` prints every target it would launch and the estimated memory. `start` refuses to run past `CLAUDE_RC_MAX_PROJECTS` (default 8).
+
+> **Trust each directory first.** These servers run in detached tmux windows, where nothing can answer the workspace trust prompt, so run `claude` once in each target directory beforehand. Claude never persists trust for a home directory, so the launcher rejects a home directory as the workspace root outright.
+
 > **Agent execution:** Run all Remote Control lifecycle commands on the host (outside an isolated agent sandbox). A sandbox may have a separate process or tmux namespace, causing `status` or `stop` to report that a host service is not running when it is. Agents should request host/escalated execution for these scripts when their environment is sandboxed.
 
 ```bash
+./scripts/claude-remote-control.sh list /path/to/workspace
 ./scripts/claude-remote-control.sh start /path/to/workspace
 ./scripts/claude-remote-control.sh status
 ./scripts/claude-remote-control.sh attach
 ./scripts/claude-remote-control.sh update /path/to/workspace
 ./scripts/claude-remote-control.sh stop
 ```
+
+Tunable through the environment:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CLAUDE_RC_WORKSPACE_ROOT` | `$PWD` | Fallback when the argument is omitted |
+| `CLAUDE_RC_TMUX_SESSION` | `claude-rc` | tmux session name |
+| `CLAUDE_RC_CAPACITY` | `3` | Concurrent sessions per server (Claude's own default is 32) |
+| `CLAUDE_RC_MAX_PROJECTS` | `8` | `start` refuses beyond this many repositories |
+| `CLAUDE_RC_MAX_DEPTH` | `3` | Repository search depth below the root |
+| `CLAUDE_RC_SETTLE_SECONDS` | `3` | Delay before verifying servers came up |
+| `CLAUDE_RC_PRECREATE_SESSIONS` | `off` | `on` restores Claude's default of pre-creating a session per server |
+
+`status` lists only servers that are actually alive; a crashed server leaves no tmux window behind, so compare against `list` to spot one that died. `start` verifies each server survived startup and exits non-zero, naming the targets that failed, rather than reporting success unconditionally.
 
 Install it on your user `PATH` to run it from anywhere:
 
@@ -29,6 +56,8 @@ claude-remote-control start /path/to/workspace
 ```
 
 Rerun the `install` command after updating the checkout. During development, you can symlink the script instead so changes take effect immediately. If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
+
+`remote-control.sh` calls its two sibling launchers, so install or symlink the whole `scripts/` directory together rather than that one file; it resolves symlinks to find its siblings and reports clearly if they are missing.
 
 Run Codex Remote Control independently with the matching launcher:
 
@@ -44,6 +73,7 @@ Codex runs one app-server daemon from the supplied workspace. If the workspace a
 To manage Claude and Codex Remote Control together, run the combined launcher directly from this checkout:
 
 ```bash
+./scripts/remote-control.sh list /path/to/workspace
 ./scripts/remote-control.sh start /path/to/workspace
 ./scripts/remote-control.sh status
 ./scripts/remote-control.sh pair
@@ -52,6 +82,8 @@ To manage Claude and Codex Remote Control together, run the combined launcher di
 ```
 
 Claude still receives one server per discovered repository. Codex runs its single app-server daemon with the supplied workspace as its working directory.
+
+`stop` always attempts both services and reports a failure only after both have run, so an already-stopped service never blocks the other from stopping. `restart` and `update` likewise continue through a stop failure instead of aborting before they start anything. Stopping a service that was not running is not an error.
 
 ## Using this marketplace
 

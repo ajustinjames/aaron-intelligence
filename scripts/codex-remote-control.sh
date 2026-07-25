@@ -47,13 +47,24 @@ start_service() {
   (cd -- "$WORKSPACE_ROOT" && codex remote-control start)
 }
 
+# Codex exits non-zero when asked to stop a daemon that is not running. Treat
+# that as success so restart and update do not abort on an already-stopped
+# service; only report a real failure.
 stop_service() {
   require_command codex
-  codex remote-control stop
+
+  if codex remote-control stop; then
+    return 0
+  fi
+
+  echo "Codex Remote Control was not running, or did not stop cleanly." >&2
+  echo "Continuing; verify with 'codex remote-control status' if available." >&2
+  return 0
 }
 
 update_service() {
   stop_service
+  require_command codex
   codex update
   start_service
 }
