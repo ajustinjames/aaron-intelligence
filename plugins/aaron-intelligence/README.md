@@ -9,6 +9,8 @@ in its own section below; new ones get added over time.
 | # | Component | Type | What it does |
 |---|---|---|---|
 | 1 | Bash tool guard | `PreToolUse` hook | Keeps Claude using Read/Edit/Write instead of the shell. |
+| 2 | grill-me | skill | Interviews you relentlessly about a plan/design until it's fully resolved. |
+| 3 | grill-me-issue | skill | Same interview, but writes the resolved plan up as a GitHub issue. |
 
 ---
 
@@ -61,6 +63,27 @@ substitution than wedge legitimate shell work. These all pass through:
   session. Any denial message also reminds Claude of this escape hatch.
 - **Fail-open:** malformed input, oversized payloads, or any internal error →
   the command is allowed. A guard that denies on its own bugs is worse than none.
+
+---
+
+## 2. grill-me
+
+A `/grill-me`-style skill that interviews you relentlessly about a plan or
+design until every branch of the decision tree is resolved — one question at
+a time, with a recommended answer offered for each, and codebase exploration
+preferred over asking when a question can be answered that way.
+
+Vendored (point-in-time copy, not a live mirror) from
+[`mattpocock/skills`](https://github.com/mattpocock/skills)'s
+`skills/productivity/grill-me/SKILL.md`.
+
+## 3. grill-me-issue
+
+Same interview process as **grill-me**, but instead of stopping once the plan
+is resolved, it writes the outcome up as a well-structured GitHub issue
+(problem, context, proposed approach, acceptance criteria, etc.) and shows it
+to you for review. It never runs `gh issue create` on its own — filing is a
+visible, shared-state action and requires your explicit go-ahead.
 
 ## Install
 

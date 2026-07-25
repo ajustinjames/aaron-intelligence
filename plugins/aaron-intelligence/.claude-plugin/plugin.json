@@ -1,6 +1,6 @@
 {
   "name": "aaron-intelligence",
-  "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. First component: a PreToolUse guard that soft-blocks using Bash (cat/head/tail/sed -i/echo>file) as a stand-in for the Read/Edit/Write tools and tells Claude which tool to use instead.",
+  "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. Includes a Bash tool guard hook and the grill-me / grill-me-issue skills.",
   "version": "1.0.0",
   "author": {
     "name": "Aaron James",
