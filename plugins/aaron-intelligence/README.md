@@ -156,22 +156,7 @@ and there's nothing to keep in sync.
 It classifies before touching anything — `git mv` when only `CLAUDE.md` exists,
 drop-and-link when `CLAUDE.md` is just a stub pointing at `AGENTS.md`, and a hard
 stop when both files are real and differ (each may hold rules the other lacks) or
-when `CLAUDE.md` links somewhere unexpected.
-
-Three things it exists to document, all found by running it:
-
-- **The contents API misreports symlinks.** GitHub resolves same-repo links, so
-  `contents/CLAUDE.md` returns `type: "file"` with the *target's* size — a
-  correct repo is indistinguishable from a duplicated one, and checking for
-  `type == "symlink"` reports failure on every repo that actually worked. Read
-  the mode from `git/trees` instead.
-- **Audit the remote's default branch, not your checkouts.** Working copies sit
-  on feature branches and go stale; auditing them produced a to-do list where
-  half the repos were already fixed upstream.
-- **`core.symlinks=false`** (Windows, or a clone made with it) checks the link
-  out as a small text file containing `AGENTS.md` while git still reports the
-  tree **clean** — agents read the stub and get nothing, with nothing visibly
-  wrong.
+when `CLAUDE.md` links somewhere unexpected. Also audits every repo at once.
 
 ## Install
 
