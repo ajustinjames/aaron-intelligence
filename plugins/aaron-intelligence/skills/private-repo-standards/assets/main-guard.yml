@@ -1,0 +1,53 @@
+name: main-guard
+
+# Flags commits that reach the default branch without going through a merged
+# pull request. Advisory only: Actions runs *after* the push, so this cannot
+# reject it — it turns the commit red and makes the bypass visible.
+#
+# Installed by the private-repo-standards skill, for private repos on GitHub
+# Free where rulesets and branch protection are unavailable.
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a merged pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          BRANCH: ${{ github.ref_name }}
+          # Comma-separated logins allowed to push directly (release bots etc.).
+          ALLOWED_ACTORS: 'dependabot[bot]'
+        run: |
+          set -euo pipefail
+
+          case ",${ALLOWED_ACTORS}," in
+            *",${ACTOR},"*)
+              echo "::notice::${ACTOR} is an allowed direct pusher — skipping."
+              exit 0
+              ;;
+          esac
+
+          merged=$(gh api "repos/${REPO}/commits/${SHA}/pulls" \
+                     --jq '[.[] | select(.merged_at != null)] | length')
+
+          if [ "${merged:-0}" -gt 0 ]; then
+            echo "OK: ${SHA} arrived via a merged pull request."
+            exit 0
+          fi
+
+          echo "::error::Direct push to ${BRANCH} by ${ACTOR}. This branch is PR-only."
+          echo "If this was intentional, note it on the commit. To allow an" >&2
+          echo "automation to push here, add its login to ALLOWED_ACTORS in" >&2
+          echo ".github/workflows/main-guard.yml." >&2
+          exit 1

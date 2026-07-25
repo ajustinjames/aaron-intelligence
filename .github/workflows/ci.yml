@@ -23,7 +23,47 @@ jobs:
           done
 
       - name: Syntax-check shell scripts
-        run: bash -n scripts/*.sh
+        run: |
+          bash -n scripts/*.sh
+          for f in plugins/*/skills/*/assets/pre-push; do
+            [ -e "$f" ] || continue
+            echo "sh -n $f"
+            sh -n "$f"
+          done
+
+      - name: Validate skill assets
+        run: |
+          for y in plugins/*/skills/*/assets/*.yml; do
+            [ -e "$y" ] || continue
+            echo "parse $y"
+            python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$y"
+          done
+          for j in plugins/*/skills/*/*.json; do
+            [ -e "$j" ] || continue
+            echo "parse $j"
+            node -e "JSON.parse(require('fs').readFileSync('$j','utf8'))"
+          done
+
+      - name: Assert repo-standards keeps an admin bypass actor
+        run: |
+          node -e '
+            const s = JSON.parse(require("fs").readFileSync(
+              "plugins/aaron-intelligence/skills/repo-standards/standard.json", "utf8"));
+            const ok = (s.bypass_actors || []).some(a =>
+              a.actor_type === "RepositoryRole" && a.bypass_mode === "always");
+            if (!ok) {
+              console.error(
+                "standard.json has no always-bypass RepositoryRole actor: with a required\n" +
+                "approval a sole maintainer would be permanently unable to merge.");
+              process.exit(1);
+            }
+            const pr = (s.rules || []).find(r => r.type === "pull_request");
+            if (!pr || pr.parameters.require_code_owner_review !== true) {
+              console.error("standard.json must require code-owner review");
+              process.exit(1);
+            }
+            console.log("repo-standards invariants hold");
+          '
 
       - name: Validate JSON manifests
         run: |
