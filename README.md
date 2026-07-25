@@ -4,54 +4,12 @@ My random enhancement for AI tools.
 
 This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It hosts one small plugin of its own ([`aaron-intelligence`](./plugins/aaron-intelligence)) and is otherwise a curated jumping-off point for finding good Claude Code plugins, official and third-party.
 
-## Project-scoped Remote Control
+## Remote Control
 
-[`scripts/claude-remote-control.sh`](./scripts/claude-remote-control.sh) starts a named Claude Remote Control server from the workspace root, then recursively discovers Git repositories beneath it and starts another server from each repository root. The workspace-level session can clone or initialize repositories; project sessions load their own instructions and Git context. Each target allows up to three concurrent sessions, and newly added repositories are picked up automatically the next time the launcher starts.
-
-> **Agent execution:** Run all Remote Control lifecycle commands on the host (outside an isolated agent sandbox). A sandbox may have a separate process or tmux namespace, causing `status` or `stop` to report that a host service is not running when it is. Agents should request host/escalated execution for these scripts when their environment is sandboxed.
-
-```bash
-./scripts/claude-remote-control.sh start /path/to/workspace
-./scripts/claude-remote-control.sh status
-./scripts/claude-remote-control.sh attach
-./scripts/claude-remote-control.sh update /path/to/workspace
-./scripts/claude-remote-control.sh stop
-```
-
-Install it on your user `PATH` to run it from anywhere:
-
-```bash
-mkdir -p ~/.local/bin
-install -m 755 scripts/claude-remote-control.sh \
-  ~/.local/bin/claude-remote-control
-
-claude-remote-control start /path/to/workspace
-```
-
-Rerun the `install` command after updating the checkout. During development, you can symlink the script instead so changes take effect immediately. If the workspace argument is omitted, the launcher uses `CLAUDE_RC_WORKSPACE_ROOT` and then the current directory as fallbacks.
-
-Run Codex Remote Control independently with the matching launcher:
-
-```bash
-./scripts/codex-remote-control.sh start /path/to/workspace
-./scripts/codex-remote-control.sh pair
-./scripts/codex-remote-control.sh update /path/to/workspace
-./scripts/codex-remote-control.sh stop
-```
-
-Codex runs one app-server daemon from the supplied workspace. If the workspace argument is omitted, the launcher uses `CODEX_RC_WORKSPACE_ROOT` and then the current directory as fallbacks. Codex Remote Control does not expose a status command.
-
-To manage Claude and Codex Remote Control together, run the combined launcher directly from this checkout:
-
-```bash
-./scripts/remote-control.sh start /path/to/workspace
-./scripts/remote-control.sh status
-./scripts/remote-control.sh pair
-./scripts/remote-control.sh update /path/to/workspace
-./scripts/remote-control.sh stop
-```
-
-Claude still receives one server per discovered repository. Codex runs its single app-server daemon with the supplied workspace as its working directory.
+Remote Control sessions are started on demand. Codex runs once from the
+workspace root and selects target repositories remotely; Claude runs in a
+per-repository tmux session. See [REMOTE_CONTROL.md](./REMOTE_CONTROL.md) for
+setup, usage, and the shutdown helper.
 
 ## Using this marketplace
 
