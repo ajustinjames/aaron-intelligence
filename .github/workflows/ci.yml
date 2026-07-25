@@ -89,34 +89,5 @@ jobs:
             console.log("all", plugins.length, "plugin source paths exist");
           '
 
-      - name: Assert caveman mode lists agree
-        run: |
-          node -e '
-            const fs = require("fs");
-            const { VALID_MODES } = require("./plugins/caveman-lite/hooks/caveman-config.js");
-            const cmd = fs.readFileSync("plugins/caveman-lite/commands/caveman-lite.md", "utf8");
-            const m = cmd.match(/argument-hint:\s*.\[([^\]]*)\]/);
-            if (!m) { console.error("could not find argument-hint in caveman-lite command"); process.exit(1); }
-            const hint = m[1].split("|").map(s => s.trim());
-            // Every token in the command hint must be a real mode.
-            const unknown = hint.filter(h => !VALID_MODES.includes(h));
-            if (unknown.length) {
-              console.error("argument-hint has non-VALID_MODES tokens:", unknown);
-              process.exit(1);
-            }
-            // wenyan-full is an alias surfaced as wenyan in the hint; every other
-            // canonical mode must be offered.
-            const expected = VALID_MODES.filter(x => x !== "wenyan-full");
-            const missing = expected.filter(x => !hint.includes(x));
-            if (missing.length) {
-              console.error("argument-hint missing modes:", missing);
-              process.exit(1);
-            }
-            console.log("mode lists agree:", hint.join(", "));
-          '
-
-      - name: Run flag-helper tests
-        run: node --test plugins/caveman-lite/hooks/caveman-config.test.js
-
       - name: Run bash-tool-guard tests
         run: node --test plugins/aaron-intelligence/hooks/bash-tool-guard.test.js

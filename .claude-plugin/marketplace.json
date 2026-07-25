@@ -8,21 +8,6 @@
   },
   "plugins": [
     {
-      "name": "caveman-lite",
-      "source": "./plugins/caveman-lite",
-      "description": "Ultra-compressed communication mode (hooks only) — no agents, no slash commands, no skills. Safe to install alongside multi-agent orchestration layers."
-    },
-    {
-      "name": "pilotfish-agents",
-      "source": "./plugins/pilotfish-agents",
-      "description": "Vendored copy of Nanako0129/pilotfish's six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) plus hooks that load and reinforce the delegation policy each turn. Portable multi-model orchestration; only the settings.json fallbackModel step is manual — see plugin README."
-    },
-    {
-      "name": "cross-model-delegate",
-      "source": "./plugins/cross-model-delegate",
-      "description": "Skill that routes suitable work (second-opinion diagnosis, cross-model review, web research, bulk repo-wide refactors) to OpenAI Codex and Google Antigravity CLI — separate subscription pools, zero Anthropic tokens. Requires codex/agy installed and authenticated; off by default otherwise."
-    },
-    {
       "name": "aaron-intelligence",
       "source": "./plugins/aaron-intelligence",
       "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. (1) A PreToolUse Bash guard that soft-blocks using the shell (cat/head/tail, sed -i, echo>file) as a stand-in for the Read/Edit/Write tools; precision-first, so pipelines, tail -f, awk/grep, and program-output redirects are left alone. Off via AARON_INTELLIGENCE_GUARD=off. (2) repo-standards — applies one canonical default-branch ruleset and a sole-CODEOWNER PR via the gh CLI, from a versioned standard.json. (3) private-repo-standards — the fallback for private repos on GitHub Free, where rulesets, branch protection, and CODEOWNERS are all Pro-gated."
