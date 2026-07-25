@@ -55,9 +55,19 @@ stop and say so.
 
 Backwards, and `require_code_owner_review: true` lands on a repo with no
 CODEOWNERS file — no owner exists to satisfy the rule, so PRs are unmergeable
-except by bypass. (Worth knowing: this is the current state of
-`aaron-intelligence` and `ajj-design`, which both require code-owner review with
-no CODEOWNERS file anywhere — the rule is silently doing nothing.)
+except by bypass.
+
+Worth auditing for, because it's invisible: the ruleset shows green in the UI
+while the code-owner rule does nothing. Check both halves together —
+
+```bash
+gh api repos/$R/rulesets --jq '.[]|select(.target=="branch")|.id' \
+  | while read -r id; do
+      gh api "repos/$R/rulesets/$id?includes_parents=false" \
+        --jq 'select(.rules[]?.parameters.require_code_owner_review==true)|"requires code-owner review"'
+    done
+gh api repos/$R/contents/.github/CODEOWNERS --jq .path 2>/dev/null || echo "no CODEOWNERS"
+```
 
 ## Step 1 — check eligibility
 
