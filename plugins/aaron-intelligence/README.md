@@ -13,6 +13,7 @@ in its own section below; new ones get added over time.
 | 3 | grill-me-issue | skill | Same interview, but writes the resolved plan up as a GitHub issue. |
 | 4 | repo-standards | skill | One canonical branch ruleset + sole CODEOWNER, applied via `gh`. Public repos. |
 | 5 | private-repo-standards | skill | Best-effort equivalent for private repos on GitHub Free, where rulesets are Pro-gated. |
+| 6 | unify-agent-instructions | skill | Makes `AGENTS.md` the one instructions file and `CLAUDE.md` a symlink to it. |
 
 ---
 
@@ -142,6 +143,49 @@ unavailable, so this is a separate, weaker toolkit rather than a variant of #4.
 
 The skill is required to close by stating plainly what is *not* enforced, so a
 private repo never looks more protected than it is.
+
+---
+
+## 6. unify-agent-instructions
+
+One instructions file per repo: `AGENTS.md` holds the content, `CLAUDE.md` is a
+git-tracked symlink (`120000`) pointing at it. `AGENTS.md` is the cross-tool
+convention and Claude Code follows the symlink transparently, so every tool reads
+the same file and there's nothing to keep in sync.
+
+The skill classifies the repo before touching anything, because the right move
+differs per state and two states must *not* be auto-fixed:
+
+| On disk | Action |
+|---|---|
+| `CLAUDE.md` only | `git mv` to `AGENTS.md` (keeps history via rename detection), then link. |
+| `AGENTS.md` only | Add the link. |
+| Both, identical | Drop the duplicate, link. |
+| `CLAUDE.md` is a pointer stub | Upgrade to a real symlink — same intent, done properly. |
+| **Both, real and differing** | **Stop** — show the diff, let you merge. Each may hold rules the other lacks. |
+| `CLAUDE.md` → elsewhere | **Stop** — report the target rather than clobber it. |
+
+The **pointer stub** is the case that actually shows up: a `CLAUDE.md` containing
+`@AGENTS.md`, or a line of prose saying "follow AGENTS.md". That's the symlink's
+intent hand-rolled, and it's safe to replace — the stub costs an extra file read,
+is Claude-only, and (observed in the wild) sometimes points at an *absolute* path
+that's dead in every other clone. Treating these as merge conflicts would be
+wrong, so the skill checks for them before it ever proposes a merge.
+
+Two traps it documents:
+
+- **`core.symlinks=false`** (Windows, or any clone made with it) checks the link
+  out as a 9-byte regular file containing the text `AGENTS.md` — and git reports
+  the tree **clean**, since the index still says `120000`. Agents read the stub
+  and get no instructions, with nothing visibly wrong. Fix the clone, never
+  re-commit the file.
+- **`ln -sf` as a shortcut.** Plain `ln -s` failing on an existing `CLAUDE.md` is
+  the correct outcome — it forces re-classification. `-f` clobbers, and against a
+  symlink-to-directory it creates the link *inside* that directory.
+
+Includes a workspace-wide audit that classifies every checkout, and a no-clone
+path via the git **trees** API — the contents API only writes mode `100644` and
+physically cannot create the symlink.
 
 ## Install
 
