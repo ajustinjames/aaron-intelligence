@@ -24,6 +24,7 @@ which state you're in, and two of the states must not be auto-fixed.
 
 ```bash
 git rev-parse --show-toplevel                    # confirm you're at the root
+git pull --ff-only                               # classify current state, not a stale one
 git ls-files -s AGENTS.md CLAUDE.md              # index modes: 100644=file 120000=symlink
 ls -la AGENTS.md CLAUDE.md 2>&1                  # what's actually on disk
 readlink CLAUDE.md 2>/dev/null                   # link target, if any
@@ -139,25 +140,70 @@ gh pr create --title "chore: make AGENTS.md canonical, CLAUDE.md a symlink" \
   --body "AGENTS.md is now the single source of agent instructions; CLAUDE.md is a symlink to it, so Claude Code and every AGENTS.md-aware tool read the same file."
 ```
 
-Confirm the symlink survived the round trip — GitHub shows a `120000` blob as a
-link, and a fresh clone should get a real symlink:
+To confirm it survived the round trip, ask the **trees** API for the raw mode.
+Do not use the contents API here — see below:
 
 ```bash
-gh api repos/$R/contents/CLAUDE.md --jq .type   # → "symlink"
+R=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
+BASE=$(gh api repos/$R --jq .default_branch)
+gh api repos/$R/git/trees/$BASE \
+  --jq '.tree[]|select(.path=="CLAUDE.md")|"\(.mode) \(.size)B"'   # → 120000 9B
 ```
+
+**The contents API will lie to you.** GitHub transparently resolves a symlink
+that points inside the same repo, so `contents/CLAUDE.md` reports
+`type: "file"` with the *target's* size — a correctly-linked repo looks
+identical to a duplicated one:
+
+```bash
+gh api repos/$R/contents/CLAUDE.md --jq '"\(.type) \(.size)"'   # → "file 7379"  (!)
+```
+
+Only `.sha` gives it away: it's the 9-byte link blob, not the file you see the
+size of. `type: "symlink"` appears only when the target is *outside* the repo
+and can't be resolved — i.e. the broken case. Checking `.type == "symlink"`
+reports failure on every repo that actually worked.
 
 ## Auditing every repo
 
-Local checkouts, since making a symlink needs a working tree:
+**Audit the remote, not your checkouts.** A local working copy is only as fresh
+as its last `git pull`, and a repo someone already fixed still looks broken
+locally — this exact mistake produced a "needs migration" list where half the
+entries were long since done. The trees API is authoritative and needs no clone:
+
+```bash
+for R in $(gh repo list "$OWNER" --limit 100 --source --no-archived \
+             --json nameWithOwner --jq '.[].nameWithOwner'); do
+  B=$(gh api repos/$R --jq .default_branch 2>/dev/null) || continue
+  printf '%-40s ' "$R"
+  gh api repos/$R/git/trees/$B \
+    --jq '[.tree[]|select(.path=="AGENTS.md" or .path=="CLAUDE.md")|"\(.path):\(.mode):\(.size)"]|join(" ")' 2>/dev/null \
+  | awk '{ for(i=1;i<=NF;i++){split($i,f,":"); m[f[1]]=f[2]; s[f[1]]=f[3]}
+      if(m["CLAUDE.md"]=="120000") print "OK";
+      else if(m["CLAUDE.md"] && m["AGENTS.md"]) printf "BOTH REAL (CLAUDE.md %sB%s)\n", s["CLAUDE.md"], (s["CLAUDE.md"]+0<300?" - likely stub":"");
+      else if(m["CLAUDE.md"]) print "migrate";
+      else if(m["AGENTS.md"]) print "link";
+      else print "-" }'
+done
+```
+
+Then clone or `git pull` only the repos that actually need work. Making the
+symlink still requires a working tree (or the trees-API path below):
+
+If you must go over local checkouts instead (offline, or repos with no remote),
+**fetch first and read `origin/HEAD`, never the working tree** — otherwise you
+are auditing whenever you last pulled:
 
 ```bash
 for d in ~/workspace/*/ ~/workspace/*/*/; do
   [ -d "$d/.git" ] || continue
+  git -C "$d" fetch -q origin 2>/dev/null
+  REF=$(git -C "$d" symbolic-ref -q --short refs/remotes/origin/HEAD || echo HEAD)
   printf '%-45s ' "${d#$HOME/}"
-  git -C "$d" ls-files -s AGENTS.md CLAUDE.md 2>/dev/null \
+  git -C "$d" ls-tree "$REF" AGENTS.md CLAUDE.md 2>/dev/null \
     | awk '{m[$4]=$1} END{
         if (m["CLAUDE.md"]=="120000") print "OK";
-        else if (m["CLAUDE.md"] && m["AGENTS.md"]) print "BOTH REAL - needs review";
+        else if (m["CLAUDE.md"] && m["AGENTS.md"]) print "BOTH REAL - inspect";
         else if (m["CLAUDE.md"]) print "migrate (CLAUDE.md only)";
         else if (m["AGENTS.md"]) print "link (AGENTS.md only)";
         else print "-";
@@ -165,20 +211,23 @@ for d in ~/workspace/*/ ~/workspace/*/*/; do
 done
 ```
 
+`ls-tree <ref>` rather than `ls-files`, because `ls-files` reads the index —
+your local state, not the branch everyone else sees.
+
 Fix one repo at a time. A `BOTH REAL` row is only a *candidate* for state F —
-open `CLAUDE.md` before deciding, since most turn out to be state I stubs. A
-quick first cut, since stubs are tiny:
+read `CLAUDE.md` before deciding, since most turn out to be state I stubs.
+Stubs are tiny, so size is a good first cut:
 
 ```bash
-git -C "$d" cat-file -s :CLAUDE.md    # under ~300B is almost always a stub
+git -C "$d" cat-file -s "$REF:CLAUDE.md"    # under ~300B is almost always a stub
 ```
 
 ### Without a clone
 
 The contents API only writes regular files (`100644`), so it **cannot** create
-the symlink — that's why this skill is clone-based. To do it remotely you must
-drop to the git trees API, which accepts mode `120000` with the target as blob
-content:
+the symlink — which is why the working-tree path above is the default. To do it
+remotely you must drop to the git trees API, which accepts mode `120000` with
+the target as blob content:
 
 ```bash
 R=owner/repo
