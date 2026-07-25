@@ -1,23 +1,25 @@
 # Remote Control
 
-Start Remote Control only when it is needed, from the repository it should
-control. Codex manages its own process. Claude runs in a detached tmux session
-so it remains available after the terminal closes.
+Start Remote Control only when it is needed. Codex starts from the workspace
+root and selects target repositories from remote sessions. Claude starts from
+the target repository in a detached tmux session so it remains available after
+the terminal closes.
 
 Run these commands on the host rather than in an isolated agent sandbox. A
 sandbox may have a different process or tmux namespace.
 
 ## Codex
 
-Change to the target repository and use Codex's native Remote Control command:
+Change to the workspace root and use Codex's native Remote Control command:
 
 ```bash
-cd /path/to/repository
+cd /path/to/workspace
 codex remote-control start
 ```
 
-Codex uses the current directory as its workspace and needs no tmux session or
-repository script. Use its native pairing command when needed:
+Start only one Codex Remote Control process for the workspace. Remote sessions
+can select the target repository within that workspace. Codex needs no tmux
+session or repository script. Use its native pairing command when needed:
 
 ```bash
 codex remote-control pair
@@ -31,7 +33,7 @@ the target repository, and start Claude:
 ```bash
 cd /path/to/repository
 tmux new-session -d -s claude-rc-my-project \
-  'exec claude remote-control --name my-project --spawn same-dir --capacity 3'
+  'claude remote-control'
 ```
 
 Use one tmux session per repository. The `claude-rc-` prefix lets the shutdown

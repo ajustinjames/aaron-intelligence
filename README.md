@@ -6,10 +6,10 @@ This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.co
 
 ## Remote Control
 
-Remote Control sessions are started on demand from the repository they should
-control. Codex uses its native command directly; Claude runs in a per-repository
-tmux session. See [REMOTE_CONTROL.md](./REMOTE_CONTROL.md) for setup, usage, and
-the shutdown helper.
+Remote Control sessions are started on demand. Codex runs once from the
+workspace root and selects target repositories remotely; Claude runs in a
+per-repository tmux session. See [REMOTE_CONTROL.md](./REMOTE_CONTROL.md) for
+setup, usage, and the shutdown helper.
 
 ## Using this marketplace
 
