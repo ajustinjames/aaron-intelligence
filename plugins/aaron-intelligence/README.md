@@ -150,42 +150,28 @@ private repo never looks more protected than it is.
 
 One instructions file per repo: `AGENTS.md` holds the content, `CLAUDE.md` is a
 git-tracked symlink (`120000`) pointing at it. `AGENTS.md` is the cross-tool
-convention and Claude Code follows the symlink transparently, so every tool reads
-the same file and there's nothing to keep in sync.
+convention and Claude Code follows the symlink, so every tool reads the same file
+and there's nothing to keep in sync.
 
-The skill classifies the repo before touching anything, because the right move
-differs per state and two states must *not* be auto-fixed:
+It classifies before touching anything — `git mv` when only `CLAUDE.md` exists,
+drop-and-link when `CLAUDE.md` is just a stub pointing at `AGENTS.md`, and a hard
+stop when both files are real and differ (each may hold rules the other lacks) or
+when `CLAUDE.md` links somewhere unexpected.
 
-| On disk | Action |
-|---|---|
-| `CLAUDE.md` only | `git mv` to `AGENTS.md` (keeps history via rename detection), then link. |
-| `AGENTS.md` only | Add the link. |
-| Both, identical | Drop the duplicate, link. |
-| `CLAUDE.md` is a pointer stub | Upgrade to a real symlink — same intent, done properly. |
-| **Both, real and differing** | **Stop** — show the diff, let you merge. Each may hold rules the other lacks. |
-| `CLAUDE.md` → elsewhere | **Stop** — report the target rather than clobber it. |
+Three things it exists to document, all found by running it:
 
-The **pointer stub** is the case that actually shows up: a `CLAUDE.md` containing
-`@AGENTS.md`, or a line of prose saying "follow AGENTS.md". That's the symlink's
-intent hand-rolled, and it's safe to replace — the stub costs an extra file read,
-is Claude-only, and (observed in the wild) sometimes points at an *absolute* path
-that's dead in every other clone. Treating these as merge conflicts would be
-wrong, so the skill checks for them before it ever proposes a merge.
-
-Two traps it documents:
-
-- **`core.symlinks=false`** (Windows, or any clone made with it) checks the link
-  out as a 9-byte regular file containing the text `AGENTS.md` — and git reports
-  the tree **clean**, since the index still says `120000`. Agents read the stub
-  and get no instructions, with nothing visibly wrong. Fix the clone, never
-  re-commit the file.
-- **`ln -sf` as a shortcut.** Plain `ln -s` failing on an existing `CLAUDE.md` is
-  the correct outcome — it forces re-classification. `-f` clobbers, and against a
-  symlink-to-directory it creates the link *inside* that directory.
-
-Includes a workspace-wide audit that classifies every checkout, and a no-clone
-path via the git **trees** API — the contents API only writes mode `100644` and
-physically cannot create the symlink.
+- **The contents API misreports symlinks.** GitHub resolves same-repo links, so
+  `contents/CLAUDE.md` returns `type: "file"` with the *target's* size — a
+  correct repo is indistinguishable from a duplicated one, and checking for
+  `type == "symlink"` reports failure on every repo that actually worked. Read
+  the mode from `git/trees` instead.
+- **Audit the remote's default branch, not your checkouts.** Working copies sit
+  on feature branches and go stale; auditing them produced a to-do list where
+  half the repos were already fixed upstream.
+- **`core.symlinks=false`** (Windows, or a clone made with it) checks the link
+  out as a small text file containing `AGENTS.md` while git still reports the
+  tree **clean** — agents read the stub and get nothing, with nothing visibly
+  wrong.
 
 ## Install
 
