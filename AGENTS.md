@@ -9,6 +9,7 @@ This file provides guidance to coding agents working in this repository.
 ## Repo structure
 
 - `.claude-plugin/marketplace.json` — marketplace manifest; lists plugins this repo hosts (`aaron-intelligence`) with a `source` path relative to repo root.
+- `REMOTE_CONTROL.md` — canonical instructions for starting and stopping on-demand Codex and Claude Remote Control sessions.
 - `plugins/aaron-intelligence/` — Aaron's personal-enhancement plugin: a **grab-bag of hooks/skills/commands tuned to how he works**, meant to grow over time (not single-purpose). Its `.claude-plugin/plugin.json` inlines a `PreToolUse` hook (matcher `Bash`).
   - `hooks/bash-tool-guard.js` — the first component. Soft-blocks Bash commands that stand in for the file tools (`cat`/`head`/`tail`/`less`/`more <file>` → Read; `sed -i`/`perl -i` → Edit; `echo`/`printf`/`cat`/`tee` `> file` → Write/Edit) by returning the modern PreToolUse `deny` JSON (`hookSpecificOutput.permissionDecision`), whose reason Claude re-plans around. **Precision-first, fail-open:** anything in a pipe, `tail -f`, stdout-only echo, standalone `awk`/`sed`/`grep`/`find`, and program-output redirects are intentionally allowed; any parse error or oversized/malformed input allows the command. Off via `AARON_INTELLIGENCE_GUARD=off`. Quotes are masked before operator detection so `>`/`|` inside string literals don't false-positive.
   - `hooks/bash-tool-guard.test.js` — `node --test` suite (run in CI); assert deny/allow by spawning the hook with synthetic PreToolUse payloads. When adding a new component to this plugin, give it its own section in the plugin README's Components table and, if it has logic, its own `*.test.js`.
@@ -16,6 +17,15 @@ This file provides guidance to coding agents working in this repository.
   - `skills/repo-standards/` — GitHub branch-governance skill for **public** repos (or any repo on Pro). Markdown-only by design: `SKILL.md` is procedure, and `standard.json` is the canonical ruleset payload, piped through `jq` into `gh api --input -` so the standard never exists as prose that can drift from what's applied. Two invariants are enforced in CI rather than by tests: `standard.json` must keep a `RepositoryRole`/`always` bypass actor (without it a sole maintainer with a required approval can never merge) and must keep `require_code_owner_review: true`.
   - `skills/private-repo-standards/` — the fallback for **private repos on GitHub Free**, where rulesets, branch protection, *and* CODEOWNERS are all Pro-gated (403). Not a variant of the above but a weaker toolkit: free merge settings via `gh api -X PATCH`, plus two bundled artifacts — `assets/main-guard.yml` (Actions workflow that flags a direct push after the fact; passes `github.actor`/`ref_name` through `env:`, never interpolated into `run:`) and `assets/pre-push` (local hook, the only real prevention available). The skill is required to state plainly what it cannot enforce.
 - `README.md` — repo-level docs: how to add this marketplace and install its plugins, plus the curated table of other plugins/marketplaces.
+
+## Remote Control sessions
+
+- Before starting a Codex or Claude session, read and follow `REMOTE_CONTROL.md`; do not infer the launch procedure from the CLI alone.
+- Run Remote Control commands on the host, not inside an isolated agent sandbox, because the sandbox may use a different process or tmux namespace.
+- For Claude, start `claude remote-control` from the target repository in a detached tmux session. Use one session per repository and a short, unique name beginning with `claude-rc-`.
+- Inspect the tmux pane after launch. If Claude is waiting for trust, spawn mode, or any other interactive confirmation, show the user the prompt and ask for permission before sending input, including Enter to accept a default.
+- After the user explicitly approves and the input is sent, inspect the pane again and verify that Remote Control reports `Ready` or `Connected`; a live process alone is not sufficient.
+- Do not substitute a foreground `claude` process when a Remote Control session is requested.
 
 ## Making changes
 
