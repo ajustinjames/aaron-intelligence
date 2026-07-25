@@ -1,7 +1,7 @@
 {
   "name": "aaron-intelligence",
-  "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. Includes a Bash tool guard hook and the grill-me / grill-me-issue skills.",
-  "version": "1.0.0",
+  "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. Includes a Bash tool guard hook, the grill-me / grill-me-issue skills, and the repo-standards / private-repo-standards skills that standardize GitHub branch rulesets and sole code ownership via the gh CLI.",
+  "version": "1.1.0",
   "author": {
     "name": "Aaron James",
     "url": "https://github.com/ajustinjames"

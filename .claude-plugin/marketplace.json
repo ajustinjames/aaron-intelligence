@@ -25,7 +25,7 @@
     {
       "name": "aaron-intelligence",
       "source": "./plugins/aaron-intelligence",
-      "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. First component: a PreToolUse Bash guard that soft-blocks using the shell (cat/head/tail, sed -i, echo>file) as a stand-in for the Read/Edit/Write tools and tells Claude which tool to use instead. Precision-first — pipelines, tail -f, awk/grep, and program-output redirects are left alone. Off via AARON_INTELLIGENCE_GUARD=off."
+      "description": "Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. (1) A PreToolUse Bash guard that soft-blocks using the shell (cat/head/tail, sed -i, echo>file) as a stand-in for the Read/Edit/Write tools; precision-first, so pipelines, tail -f, awk/grep, and program-output redirects are left alone. Off via AARON_INTELLIGENCE_GUARD=off. (2) repo-standards — applies one canonical default-branch ruleset and a sole-CODEOWNER PR via the gh CLI, from a versioned standard.json. (3) private-repo-standards — the fallback for private repos on GitHub Free, where rulesets, branch protection, and CODEOWNERS are all Pro-gated."
     }
   ]
 }

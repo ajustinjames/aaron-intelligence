@@ -11,6 +11,8 @@ in its own section below; new ones get added over time.
 | 1 | Bash tool guard | `PreToolUse` hook | Keeps Claude using Read/Edit/Write instead of the shell. |
 | 2 | grill-me | skill | Interviews you relentlessly about a plan/design until it's fully resolved. |
 | 3 | grill-me-issue | skill | Same interview, but writes the resolved plan up as a GitHub issue. |
+| 4 | repo-standards | skill | One canonical branch ruleset + sole CODEOWNER, applied via `gh`. Public repos. |
+| 5 | private-repo-standards | skill | Best-effort equivalent for private repos on GitHub Free, where rulesets are Pro-gated. |
 
 ---
 
@@ -85,6 +87,62 @@ is resolved, it writes the outcome up as a well-structured GitHub issue
 to you for review. It never runs `gh issue create` on its own — filing is a
 visible, shared-state action and requires your explicit go-ahead.
 
+---
+
+## 4. repo-standards
+
+Puts every repo's default branch under one identical ruleset and names you as
+sole code owner. Managed through the `gh` CLI.
+
+The standard lives in `skills/repo-standards/standard.json` — it's the actual API
+payload, piped through `jq` into `gh api --input -`, so the rules can't drift
+between what's documented and what's applied.
+
+**What it enforces:** no deletion or force-push of the default branch; PR
+required with 1 approving review and code-owner review; stale reviews dismissed
+on push; last-push approval; review threads resolved; squash-only merges; and
+required status checks discovered per repo.
+
+**Two things worth understanding:**
+
+- **The admin bypass is load-bearing.** With one maintainer, a required approval
+  can never be satisfied — you can't approve your own PR — so you merge via the
+  repo-admin bypass. The rules still bind against everything that *isn't* an
+  admin: the Actions `GITHUB_TOKEN`, Dependabot, GitHub Apps, a fine-grained PAT
+  with `contents:write`, and any future collaborator. The skill refuses to apply
+  a payload that drops that bypass actor, since doing so locks you out of merging
+  with no self-service recovery.
+- **Status checks are never guessed.** A required check that never reports blocks
+  every PR on that repo permanently. The skill reads what actually ran, proposes
+  only the CI check, and omits the rule entirely rather than guessing — deploy,
+  release, and preview-deploy contexts are explicitly excluded.
+
+Ordering matters: the CODEOWNERS PR merges *first*. Applying
+`require_code_owner_review: true` to a repo with no CODEOWNERS file means no
+owner exists to satisfy it.
+
+Excluded on purpose: `required_signatures` (unsigned local commits would be
+rejected), strict up-to-date branches (rebase churn), and
+`required_linear_history` (squash-only already covers it).
+
+---
+
+## 5. private-repo-standards
+
+On a **private** repo under GitHub Free, rulesets, classic branch protection, and
+CODEOWNERS all return `403 Upgrade to GitHub Pro`. The whole server-side stack is
+unavailable, so this is a separate, weaker toolkit rather than a variant of #4.
+
+| Layer | Enforcement |
+|---|---|
+| Merge settings (`gh api -X PATCH`) | Real. Squash-only, auto-delete branches. |
+| `assets/main-guard.yml` | Flags a direct push *after* the fact; can't block it. |
+| `assets/pre-push` | Real prevention — this machine only; `--no-verify` skips it. |
+| CODEOWNERS file | Inert until the repo goes public or hits Pro. |
+
+The skill is required to close by stating plainly what is *not* enforced, so a
+private repo never looks more protected than it is.
+
 ## Install
 
 ```
@@ -99,6 +157,12 @@ No build step. Verify changes directly:
 ```
 node --check plugins/aaron-intelligence/hooks/bash-tool-guard.js
 node --test  plugins/aaron-intelligence/hooks/bash-tool-guard.test.js
+
+# skill assets
+sh -n plugins/aaron-intelligence/skills/private-repo-standards/assets/pre-push
+python3 -c "import yaml;yaml.safe_load(open('plugins/aaron-intelligence/skills/private-repo-standards/assets/main-guard.yml'))"
+jq -e '.bypass_actors[]|select(.actor_type=="RepositoryRole" and .bypass_mode=="always")' \
+  plugins/aaron-intelligence/skills/repo-standards/standard.json
 ```
 
 Or drive the hook by hand with a synthetic payload:
