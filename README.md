@@ -2,7 +2,7 @@
 
 My random enhancement for AI tools.
 
-This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It hosts a few small plugins of its own ([`caveman-lite`](./plugins/caveman-lite), [`pilotfish-agents`](./plugins/pilotfish-agents), [`cross-model-delegate`](./plugins/cross-model-delegate)) and is otherwise a curated jumping-off point for finding good Claude Code plugins, official and third-party.
+This repo is set up as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugin-marketplaces). It hosts one small plugin of its own ([`aaron-intelligence`](./plugins/aaron-intelligence)) and is otherwise a curated jumping-off point for finding good Claude Code plugins, official and third-party.
 
 ## Project-scoped Remote Control
 
@@ -71,9 +71,6 @@ Then install any plugin it lists:
 
 | Plugin | Description | Install |
 |---|---|---|
-| `caveman-lite` | Ultra-compressed communication mode, hooks only — no agents or slash commands, so it won't collide with another plugin's orchestration surface. Also ships a zero-runtime pure-prompt template for setups where even hooks are too much. | `/plugin install caveman-lite@aaron-intelligence` |
-| `pilotfish-agents` | Vendored copy of [Nanako0129/pilotfish](https://github.com/Nanako0129/pilotfish)'s six role subagents (scout, Explore, mech-executor, executor, verifier, security-executor) for portable multi-model orchestration. Named distinctly from upstream's `pilotfish` to avoid marketplace collisions. Requires a couple of manual `settings.json`/`CLAUDE.md` steps — see [plugin README](./plugins/pilotfish-agents/README.md). | `/plugin install pilotfish-agents@aaron-intelligence` |
-| `cross-model-delegate` | Skill that routes suitable work (second-opinion diagnosis, cross-model review, web research, bulk repo-wide refactors) to OpenAI Codex (`codex`) and Google Antigravity CLI (`agy`, Gemini) — separate subscription pools, zero Anthropic tokens. Requires `codex`/`agy` installed and authenticated; no-ops otherwise. | `/plugin install cross-model-delegate@aaron-intelligence` |
 | `aaron-intelligence` | Aaron's personal Claude Code enhancements — a growing bundle of hooks, skills, and commands tuned to how he works. **First component:** a PreToolUse Bash guard that soft-blocks using the shell (`cat`/`head`/`tail`, `sed -i`, `echo > file`) as a stand-in for the Read/Edit/Write tools and tells Claude which tool to use — a `deny` that Claude re-plans around, nothing destructive. Precision-first: pipelines, `tail -f`, `awk`/`grep`, and program-output redirects are left alone. Off via `AARON_INTELLIGENCE_GUARD=off`. See [plugin README](./plugins/aaron-intelligence/README.md). | `/plugin install aaron-intelligence@aaron-intelligence` |
 
 ## Curated plugins
