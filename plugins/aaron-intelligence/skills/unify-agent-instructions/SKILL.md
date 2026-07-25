@@ -1,6 +1,7 @@
 ---
 name: unify-agent-instructions
 description: Use when making AGENTS.md the canonical agent-instructions file in a repo and CLAUDE.md a symlink to it — migrating an existing CLAUDE.md, setting up a new repo, or auditing which repos still have a standalone or duplicate CLAUDE.md.
+disable-model-invocation: true
 ---
 
 # AGENTS.md canonical, CLAUDE.md a symlink
@@ -14,19 +15,32 @@ reads different rules — that's the thing being prevented.
 
 ## 1. Classify
 
+Read-only — do not `pull` or otherwise write before classifying. A `pull` acts
+on whatever branch happens to be checked out, which may be dirty, detached,
+upstream-less, or an intentionally stale feature branch; fetch/compare instead
+if branch freshness matters, and treat updating the checkout as an explicit
+step the user asks for separately.
+
 ```bash
-git pull --ff-only                    # classify current state, not a stale one
-git ls-files -s AGENTS.md CLAUDE.md   # 100644 = file, 120000 = symlink
+git status --short --branch                # branch, dirty/untracked state
+ls -la AGENTS.md CLAUDE.md 2>/dev/null      # untracked files `git ls-files` would miss
+git ls-files -s AGENTS.md CLAUDE.md         # tracked only: 100644 = file, 120000 = symlink
+git show :CLAUDE.md 2>/dev/null             # if CLAUDE.md is 120000, prints its link target
 ```
+
+`git ls-files -s` reports the index only — it shows mode, not target, and says
+nothing about an untracked file. Mode `120000` on its own does not mean
+"done": the link could point at the wrong file. Confirm the target with
+`git show :CLAUDE.md` before treating it as healthy.
 
 | State | Do |
 |---|---|
-| `CLAUDE.md` only | `git mv CLAUDE.md AGENTS.md`, then link |
-| `AGENTS.md` only | link |
-| `CLAUDE.md` already `120000` | done |
-| Both exist, `CLAUDE.md` is a **stub** | `git rm CLAUDE.md`, then link |
-| Both exist, both real | **stop** — `diff` them, user merges into `AGENTS.md` first |
-| `CLAUDE.md` links elsewhere | **stop** — report the target |
+| `CLAUDE.md` exists (tracked or not), no `AGENTS.md` | `git mv CLAUDE.md AGENTS.md` (untracked: `mv` then `git add`), then link |
+| `AGENTS.md` exists, no `CLAUDE.md` | link |
+| `CLAUDE.md` is tracked `120000`, `git show :CLAUDE.md` prints exactly `AGENTS.md`, and `AGENTS.md` is tracked `100644` | done |
+| `CLAUDE.md` is tracked `120000` but the target isn't exactly `AGENTS.md` | **stop** — report the target |
+| Both exist as `100644`, `CLAUDE.md` is a **stub** | `git rm CLAUDE.md`, then link |
+| Both exist as `100644`, both real | **stop** — `diff` them, user merges into `AGENTS.md` first |
 
 A **stub** is a `CLAUDE.md` that only points at `AGENTS.md` — `@AGENTS.md`, or a
 line of prose saying "follow AGENTS.md". It's this same idea hand-rolled, so
@@ -53,19 +67,37 @@ Ask the default branch on the remote, not your checkout — working copies sit o
 feature branches and go stale, which produces a to-do list of repos that were
 already fixed.
 
+Mode `120000` proves only that `CLAUDE.md` is *a* symlink, not that it points
+at `AGENTS.md` — a wrong or broken target must still print `OK` if you check
+mode alone. Read the tree entry's blob (the link target is the blob content)
+and require the exact target `AGENTS.md` plus a regular `AGENTS.md` (`100644`)
+before reporting `OK`.
+
 ```bash
 for R in $(gh repo list "$OWNER" --limit 100 --source --no-archived \
              --json nameWithOwner --jq '.[].nameWithOwner'); do
   B=$(gh api repos/$R --jq .default_branch 2>/dev/null) || continue
   printf '%-40s ' "$R"
-  gh api repos/$R/git/trees/$B \
-    --jq '[.tree[]|select(.path=="AGENTS.md" or .path=="CLAUDE.md")|"\(.path):\(.mode):\(.size)"]|join(" ")' 2>/dev/null \
-  | awk '{for(i=1;i<=NF;i++){split($i,f,":"); m[f[1]]=f[2]; s[f[1]]=f[3]}
-      if(m["CLAUDE.md"]=="120000") print "OK";
-      else if(m["CLAUDE.md"] && m["AGENTS.md"]) printf "both (CLAUDE.md %sB)\n", s["CLAUDE.md"];
-      else if(m["CLAUDE.md"]) print "migrate";
-      else if(m["AGENTS.md"]) print "link";
-      else print "-"}'
+  JSON=$(gh api repos/$R/git/trees/$B 2>/dev/null) || { echo "-"; continue; }
+  CLAUDE_MODE=$(jq -r '.tree[]|select(.path=="CLAUDE.md")|.mode' <<<"$JSON")
+  CLAUDE_SHA=$(jq -r '.tree[]|select(.path=="CLAUDE.md")|.sha' <<<"$JSON")
+  AGENTS_MODE=$(jq -r '.tree[]|select(.path=="AGENTS.md")|.mode' <<<"$JSON")
+  if [ "$CLAUDE_MODE" = "120000" ]; then
+    TARGET=$(gh api repos/$R/git/blobs/$CLAUDE_SHA --jq '.content' 2>/dev/null | base64 -d 2>/dev/null)
+    if [ "$TARGET" = "AGENTS.md" ] && [ "$AGENTS_MODE" = "100644" ]; then
+      echo "OK"
+    else
+      echo "broken symlink -> ${TARGET:-?}"
+    fi
+  elif [ -n "$CLAUDE_MODE" ] && [ -n "$AGENTS_MODE" ]; then
+    echo "both"
+  elif [ -n "$CLAUDE_MODE" ]; then
+    echo "migrate"
+  elif [ -n "$AGENTS_MODE" ]; then
+    echo "link"
+  else
+    echo "-"
+  fi
 done
 ```
 
