@@ -26,6 +26,7 @@ is right and the table is stale.
 | `allowed_merge_methods` | `["squash"]` | Linear history. |
 | `required_status_checks` | per repo — see below | CI must be green. |
 | `bypass_actors` | repo admin, `always` | **Load-bearing.** See next section. |
+| `delete_branch_on_merge` | true | Keeps merged PR branches from piling up. Repo setting, not a ruleset rule — see Step 5. |
 
 Target is `~DEFAULT_BRANCH`, so it works on `main` and `master` repos alike.
 
@@ -182,6 +183,17 @@ standard's name is `default`; report the extras and let the user consolidate.
 Renaming a drifted ruleset (`Default`, `Main branch protections`) is just the
 `name` field in the `PUT`; the id and history are preserved.
 
+## Step 5 — enable delete-branch-on-merge
+
+Not part of the ruleset — it's a plain repo setting, so it's its own API call:
+
+```bash
+gh api repos/$R --jq .delete_branch_on_merge   # before state
+gh api repos/$R -X PATCH -f delete_branch_on_merge=true --jq '{delete_branch_on_merge}'
+```
+
+Idempotent — safe to run even if already `true`.
+
 ## Auditing several repos
 
 ```bash
@@ -190,6 +202,7 @@ for R in $(gh repo list "$OWNER" --limit 100 --source --no-archived \
   echo "== $R"
   gh api repos/$R/rulesets --jq '.[]|select(.target=="branch")|"  \(.id) \(.name)"' 2>&1 \
     | sed 's/.*Upgrade to GitHub Pro.*/  SKIP private repo (needs Pro)/'
+  gh api repos/$R --jq '"  delete_branch_on_merge: \(.delete_branch_on_merge)"'
 done
 ```
 
